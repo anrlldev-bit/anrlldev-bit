@@ -3,6 +3,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { charLayer, blinkLayer, landmark, drawLandmark, treeCells, ART_CSS } from './art.mjs';
 import {
   C, Layer, textWidth, g, at, pct, BASE_CSS, REDUCED, writeSvg, rng, frame, outlinedText, ICON, panel,
   MASCOT_A, MASCOT_B, MASCOT_SLEEP, MASCOT_PAL,
@@ -12,7 +13,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = p => join(ROOT, p);
 const TAU = Math.PI * 2;
 
-const walker = (cls = '') => g(`fa${cls}`, new Layer(4).sprite(MASCOT_A, 0, 0, MASCOT_PAL)) + g(`fb${cls}`, new Layer(4).sprite(MASCOT_B, 0, 0, MASCOT_PAL));
+// Both characters walking side by side; gap is the girl's offset from the boy in pixels.
+const duo = (px, gap) => g('fa', charLayer('boy', 'A', px, 0, 0).toString() + charLayer('girl', 'A', px, gap, 0)) + g('fb', charLayer('boy', 'B', px, 0, 0).toString() + charLayer('girl', 'B', px, gap, 0));
 
 // Ink outline around whatever is already drawn, so shapes hold up on white and dark pages.
 function outlineShape(L, color = C.ink) {
@@ -134,7 +136,7 @@ function header() {
     title,
     `<g clip-path="url(#logo)"><g class="shine"><rect x="${tx * LP - 60}" y="0" width="24" height="${H}" fill="${C.cream}" opacity=".75"/></g></g>`,
     g('blink', press),
-    at(180, (GROUND - 12) * P, walker()),
+    at(170, GROUND * P - 60, duo(3, 56)),
   ].join('');
   writeSvg(out('assets/header.svg'), W, H, 'ANRLLDEV. Press start to play this profile as a small game.', css, body);
 }
@@ -166,11 +168,8 @@ function about() {
   frame(portrait, 32, 36, C.cream, C.ink, C.navy, 7, 8);
   for (let y = 31; y < 42; y++) for (let x = 9; x < 37; x++) portrait.set(x, y, y === 31 ? C.green : C.moss);
   portrait.set(12, 13, C.cream).set(31, 16, C.yellow).set(20, 11, C.cream).set(34, 24, C.cream);
-  const face = new Layer(P).sprite(MASCOT_A.slice(3), 13, 13, MASCOT_PAL, 2);
-  const leavesUp = new Layer(P).sprite(MASCOT_A.slice(0, 3), 13, 7, MASCOT_PAL, 2);
-  const leavesDown = new Layer(P).sprite(['..........', 'gg......gg', 'gggg..gggg'], 13, 7, MASCOT_PAL, 2);
-  const blinkL = new Layer(P);
-  for (const ex of [3, 6]) blinkL.rect(13 + ex * 2, 19, 2, 1, C.peach).rect(13 + ex * 2, 20, 2, 1, C.ink);
+  const pals = charLayer('boy', 'A', 3, 44, 64).toString() + charLayer('girl', 'A', 3, 100, 64);
+  const blinkL = blinkLayer('boy', 3, 44, 64).toString() + blinkLayer('girl', 3, 100, 64);
 
   const tag = new Layer(TP);
   const nameW = textWidth('ANRLLDEV');
@@ -197,51 +196,22 @@ function about() {
   css += `.lu{animation:fa 1.6s steps(1) infinite}.ld{animation:fa 1.6s steps(1) -.8s infinite}
 .bl{animation:bl 4.2s steps(1) infinite}@keyframes bl{0%{opacity:0}93%{opacity:1}97%{opacity:0}}` + REDUCED('.cover,.ld,.bl{display:none}');
 
-  const svgBody = `<defs>${defs}</defs>` + L + portrait + face + g('lu', leavesUp) + g('ld', leavesDown) + g('bl', blinkL) + tag + text + covers;
+  const svgBody = `<defs>${defs}</defs>` + L + portrait + pals + g('bl', blinkL) + tag + text + covers;
   writeSvg(out('assets/about.svg'), W, H, TEXT, css, svgBody);
 }
 
 // ---------- world map: island overworld, one landmark per project ----------
 const LANDMARKS = {
-  tendril: {
-    x: 24, y: 17, label: 'TENDRIL', ly: 4,
-    rows: [
-      '......gggg......', '....gg....gg....', '...g...gg...g...', '...g..g..g..g...',
-      '...g..g.gg..g...', '....g..g...g....', '.....g....g.....', '..ll..gggg..ll..',
-      '.llll..mm..llll.', '.lllll.mm.lllll.', '..lll..mm..lll..', '.......mm.......',
-      '..ll...mm.......', '.llll..mm...ll..', '..lll..mm..llll.', '.......mm...lll.',
-      '....bbbbbbbb....', '...bbbbbbbbbb...',
-    ],
-    pal: { g: C.yellow, l: C.green, m: C.forest, b: C.brown },
-  },
-  dblab: {
-    x: 153, y: 20, label: 'DBLAB', ly: 4,
-    rows: [
-      '......k.......', '......kyy.....', '......kyyy....', '...kkkkkkkk...', '..kbbbbbbbbk..',
-      '..kddddddddk..', '..kbbbybbbbk..', '..kbbbbbbbbk..', '..kddddddddk..', '..kbbbbbbybk..',
-      '..kbbbbbbbbk..', '..kddddddddk..', '..kbbkkkkbbk..', '..kbbk..kbbk..', '.kkkkk..kkkkk.',
-    ],
-    pal: { k: C.ink, y: C.yellow, b: C.blue, d: C.navy },
-  },
-  fileflow: {
-    x: 30, y: 62, label: 'FILEFLOW', ly: 80,
-    rows: [
-      '...........kk...', '...........kk...',
-      '......kkkk.kk...', '....kkrrrrkk....', '..kkrrrrrrrrkk..', 'kkrrrrrrrrrrrrkk', '.kkkkkkkkkkkkkk.',
-      '.kwwwwwwwwwwwwk.', '.kwyywwwwwkkkwk.', '.kwyyyywwwkykwk.', '.kwyyyywwwkkkwk.', '.kwwwwwwwwwwwwk.',
-      '.kwwwwwkkkwwwwk.', '.kwwwwwkrkwwwwk.', '.kwwwwwkrkwwwwk.', 'kkkkkkkkkkkkkkkk',
-    ],
-    pal: { k: C.ink, r: C.brown, w: C.cream, y: C.yellow },
-  },
-  akari: {
-    x: 156, y: 66, label: 'AKARI', ly: 80,
-    rows: [
-      'kkkkkkkkkkkkkkkk', 'rrrrrrrrrrrrrrrr', '..rr........rr..', '.rrrrrrrrrrrrrr.', '..rr........rr..',
-      '..rr...kk...rr..', '..rr..k..k..rr..', '..rr..k..k..rr..', '..rr...kk...rr..', '..rr........rr..',
-      '..rr........rr..', '.kkkk......kkkk.',
-    ],
-    pal: { k: C.ink, r: C.red },
-  },
+  tendril: { cx: 32, row: 'top', label: 'TENDRIL' },
+  dblab: { cx: 160, row: 'top', label: 'DBLAB' },
+  fileflow: { cx: 38, row: 'bottom', label: 'FILEFLOW' },
+  akari: { cx: 164, row: 'bottom', label: 'AKARI' },
+};
+// Bounding box of each landmark on the map grid (cells).
+const placeOf = key => {
+  const d = LANDMARKS[key], lm = landmark(key);
+  const x = d.cx - Math.floor(lm.w / 2), y = d.row === 'top' ? 36 - lm.h : 63;
+  return { x, y, w: lm.w, h: lm.h };
 };
 // Feet positions where the mascot stops for each landmark (also used by play/).
 export const STOPS = { tendril: [46, 40], dblab: [146, 40], akari: [164, 61], fileflow: [38, 61] };
@@ -266,8 +236,8 @@ function map({ withWalker }) {
     } else if (m > 0.84) c = rnd() < 0.08 ? C.orange : C.peach;
     else {
       const r = rnd();
-      c = r < 0.09 ? C.green : r < 0.12 ? C.forest : C.moss;
-      if (r > 0.985) c = [C.pink, C.yellow, C.cream][Math.floor(rnd() * 3)];
+      c = r < 0.05 ? C.green : r < 0.065 ? C.forest : C.moss;
+      if (r > 0.995) c = [C.pink, C.yellow, C.cream][Math.floor(rnd() * 3)];
     }
     const lk = lake(x, y);
     if (lk <= 1.25 && m <= 0.84) c = lk > 1 ? C.peach : lk > 0.8 ? C.cream : C.blue;
@@ -308,59 +278,53 @@ function map({ withWalker }) {
   }
 
   // Landmarks with a wooden sign each.
-  const lm = new Layer(P), signs = new Layer(P);
-  let signText = '';
-  for (const d of Object.values(LANDMARKS)) {
-    const w = d.rows[0].length, h = d.rows.length;
-    for (let i = 1; i < w - 1; i++) lm.set(d.x + i, d.y + h, '#00543a');
-    const one = new Layer(P).sprite(d.rows, d.x, d.y, d.pal);
-    outlineShape(one);
-    for (const [k, c] of one.m) { const [x, y] = k.split(',').map(Number); lm.set(x, y, c); }
-    mark(d.x, d.y, w, h + 1, 2);
-    const cx = d.x + Math.floor(w / 2), tw2 = textWidth(d.label) * 2, bw = Math.ceil((tw2 + 20) / P);
-    const sx = cx - Math.floor(bw / 2), sy = d.ly < d.y ? d.ly + 4 : d.ly;
+  const signs = new Layer(P);
+  let signText = '', lmSvg = '';
+  const shadows = new Layer(P);
+  for (const [key, d] of Object.entries(LANDMARKS)) {
+    const pl = placeOf(key);
+    for (let i = 2; i < pl.w - 2; i++) shadows.set(pl.x + i, pl.y + pl.h, '#00543a');
+    lmSvg += drawLandmark(key, P, pl.x * P, pl.y * P).svg;
+    mark(pl.x, pl.y, pl.w, pl.h + 1, 2);
+    const tw2 = textWidth(d.label) * 2, bw = Math.ceil((tw2 + 20) / P);
+    const sx = d.cx - Math.floor(bw / 2), sy = d.row === 'top' ? pl.y - 10 : pl.y + pl.h + 2;
     frame(signs, bw, 8, C.ink, C.orange, C.brown, sx, sy);
     signText += new Layer(2, sx * P + Math.round((bw * P - tw2) / 2), sy * P + 9).text(d.label, 0, 0, { color: C.cream });
-    const postY = d.ly < d.y ? sy + 8 : sy - 2;
+    const postY = d.row === 'top' ? sy + 8 : sy - 2;
     for (const px of [sx + 2, sx + bw - 3]) signs.rect(px, postY, 1, 2, C.dirt);
     mark(sx, sy, bw, 10, 2);
   }
 
   // Forests: overlapping trees packed in rows, plus a few loose ones.
-  const TREE = ['..kkk..', '.kgggk.', 'kglgggk', 'kgggggk', 'kgggddk', '.kdddk.', '..kbk..', '..kbk..'];
-  const treePal = { k: '#00543a', g: C.green, l: C.cream, d: C.moss, b: C.brown };
+  const TREE = treeCells(7), TW = 10, TH = 12;
   const spots = [];
   const tryTree = (x, y) => {
-    for (let j = 0; j < 8; j++) for (let i = 0; i < 7; i++) if (taken.has(`${x + i},${y + j}`)) return;
+    for (let j = 0; j < TH; j++) for (let i = 0; i < TW; i++) if (taken.has(`${x + i},${y + j}`)) return;
     spots.push([x, y]);
   };
   for (const [x0, y0, x1, y1] of [[46, 14, 74, 34], [124, 10, 150, 34], [62, 63, 80, 92], [120, 63, 150, 92], [8, 40, 24, 58], [176, 40, 192, 58]]) {
-    for (let y = y0, row = 0; y <= y1 - 8; y += 4, row++)
-      for (let x = x0 + (row % 2) * 3; x <= x1 - 7; x += 5)
-        if (rnd() < 0.82) tryTree(x + Math.floor(rnd() * 2), y);
+    for (let y = y0, row = 0; y <= y1 - TH; y += 5, row++)
+      for (let x = x0 + (row % 2) * 4; x <= x1 - TW; x += 7)
+        if (rnd() < 0.85) tryTree(x + Math.floor(rnd() * 2), y);
   }
   for (let n = 0; n < 90; n++) tryTree(4 + Math.floor(rnd() * 190), 4 + Math.floor(rnd() * 90));
   spots.sort((a, b) => a[1] - b[1]);
   const trees = new Layer(P);
-  for (const [x, y] of spots) trees.sprite(TREE, x, y, treePal);
+  for (const [x, y] of spots) for (const [k, c] of TREE) { const [a, b] = k.split(',').map(Number); trees.set(x + a + 1, y + b + 1, c); }
 
   // Little animated details.
-  const beacon = new Layer(P).set(159, 19, C.red);
-  const glow = new Layer(P).rect(163, 72, 2, 2, C.yellow).set(164, 73, C.orange);
   const fireflies = new Layer(P).set(20, 30, C.yellow).set(48, 12, C.yellow).set(130, 8, C.yellow);
-  let puffs = '';
-  for (let k = 0; k < 3; k++) puffs += g(`puff p${k}`, new Layer(P).rect(41, 59, 2, 2, C.silver).set(42, 59, C.cream));
   const cloudShade = new Layer(P);
   for (let y = 0; y < 14; y++) for (let x = 0; x < 46; x++) if (((x - 23) / 23) ** 2 + ((y - 7) / 7) ** 2 <= 1 && (x + y) % 2 === 0) cloudShade.set(x, y, C.ink);
 
-  let body = base + g('tw0', sparkA) + g('tw1', sparkB) + mtn + road + trees + lm + g('blink', beacon) + g('lamp', glow) + puffs + g('tw2', fireflies) + signs + signText;
+  let body = base + g('tw0', sparkA) + g('tw1', sparkB) + mtn + road + shadows + trees + lmSvg + g('tw2', fireflies) + signs + signText;
   body += at(0, 70, g('cs cs1', cloudShade)) + at(0, 230, g('cs cs2', cloudShade));
   let css = BASE_CSS + `.tw2{animation:tw 1.7s steps(1) -.4s infinite}
 .lamp{animation:lamp 1.4s steps(1) infinite}@keyframes lamp{50%{opacity:.35}}
 .puff{animation:puff 3s infinite;opacity:0}.p1{animation-delay:-1s}.p2{animation-delay:-2s}
 @keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}85%{opacity:.6}100%{opacity:0;transform:translate(8px,-28px)}}
 .cs{opacity:.16;animation:cs 46s linear infinite}.cs2{animation-duration:63s;animation-delay:-30s}
-@keyframes cs{from{transform:translateX(-200px)}to{transform:translateX(${W + 20}px)}}`;
+@keyframes cs{from{transform:translateX(-200px)}to{transform:translateX(${W + 20}px)}}` + ART_CSS;
 
   if (withWalker) {
     const route = [
@@ -387,7 +351,7 @@ function map({ withWalker }) {
       kf += `${pct((f.t / t) * 100)}{transform:translate(${(f.xy[0] - sx) * P}px,${(f.xy[1] - sy) * P}px)${tf}}`;
     });
     css += `.route{animation:route ${t.toFixed(2)}s infinite}@keyframes route{${kf}}`;
-    body += at((sx - 5) * P, (sy - 12) * P, g('route', walker()));
+    body += at((sx - 4) * P, (sy - 10) * P, g('route', duo(2, -34)));
   }
   css += REDUCED('.puff{display:none}');
   const label = 'World map: an island with Tendril grove, DBLab tower, FileFlow workshop and AKARI shrine, joined by roads.';
@@ -487,15 +451,9 @@ function questCard([key, name, desc, tags], i) {
     }
   }
 
-  const d = LANDMARKS[key];
-  const sw = d.rows[0].length * SP, sh = d.rows.length * SP;
-  const sx = bx * P + Math.round((bw * P - sw) / 2), sy = (horizon + 1) * P - sh;
-  const sprite = new Layer(SP, sx, sy).sprite(d.rows, 0, 0, d.pal);
-  let extra = '';
-  if (key === 'tendril') extra = g('tw0', new Layer(SP, sx, sy).set(1, 2, C.yellow).set(14, 5, C.cream)) + g('tw1', new Layer(SP, sx, sy).set(13, 1, C.yellow).set(2, 12, C.cream));
-  if (key === 'dblab') extra = g('blink', new Layer(SP, sx, sy).set(6, -1, C.red));
-  if (key === 'akari') extra = g('lamp', new Layer(SP, sx, sy).rect(7, 6, 2, 2, C.yellow));
-  if (key === 'fileflow') for (let k = 0; k < 3; k++) extra += g(`puff p${k}`, new Layer(SP, sx, sy).rect(11, -1, 2, 1, C.silver));
+  const lmInfo = landmark(key), LS = 4;
+  const lx = bx * P + Math.round((bw * P - lmInfo.w * LS) / 2), ly = (horizon + 2) * P - lmInfo.h * LS;
+  const sprite = drawLandmark(key, LS, lx, ly).svg, extra = '';
 
   let y = Math.round((H - blockH) / 2);
   const T = new Layer(TP);
@@ -535,8 +493,8 @@ function footer() {
   const THANKS = 'THANKS FOR VISITING';
   const title = new Layer(3);
   outlinedText(title, THANKS, Math.round((W / 3 - textWidth(THANKS)) / 2), 9, { fill: cy => (cy < 4 ? C.cream : C.silver), outline: C.ink, shadow: C.plum });
-  const mascot = new Layer(P).sprite(MASCOT_SLEEP, 86, GROUND - 11, MASCOT_PAL);
-  const log = new Layer(P).rect(83, GROUND - 1, 16, 1, C.brown).rect(84, GROUND - 2, 14, 1, C.dirt);
+  const mascot = charLayer('boy', 'A', 3, 300, GROUND * P - 60, { asleep: true }).toString() + charLayer('girl', 'A', 3, 344, GROUND * P - 60, { asleep: true });
+  const log = new Layer(P).rect(73, GROUND - 4, 25, 4, C.brown).rect(73, GROUND - 4, 25, 1, '#c97b4a').rect(73, GROUND - 1, 25, 1, C.dirt).set(73, GROUND - 3, C.dirt).set(97, GROUND - 3, C.dirt);
 
   const FIRE = [
     ['....y...', '...yy...', '..yoyy..', '..yooy..', '.yoory..', '.yoroyy.', 'bbbbbbbb', '.b.bb.b.'],
@@ -548,25 +506,24 @@ function footer() {
   const fire = g('fa', new Layer(P).sprite(FIRE[0], 100, GROUND - 8, firePal)) + g('fb', new Layer(P).sprite(FIRE[1], 100, GROUND - 8, firePal));
 
   let zs = '', flies = '';
-  for (let k = 0; k < 3; k++) zs += g(`z z${k}`, new Layer(2, 96 * P, (GROUND - 15) * P).text('z', 0, 0, { color: C.cream }));
+  for (let k = 0; k < 3; k++) zs += g(`z z${k}`, new Layer(2, 398, (GROUND - 15) * P).text('z', 0, 0, { color: C.cream }));
   [[30, 22], [58, 26], [140, 24], [168, 20], [120, 27]].forEach(([x, y], k) => {
     flies += g(`fly fl${k}`, new Layer(P).set(x, y, C.yellow), ` style="animation-delay:-${k * 0.9}s"`);
   });
   const css = BASE_CSS + `.z{animation:z 3s infinite;opacity:0}.z1{animation-delay:-1s}.z2{animation-delay:-2s}
-@keyframes z{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}10%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translate(18px,-16px)}}
+@keyframes z{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}10%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translate(14px,-8px)}}
 .fly{animation:fly 4.5s steps(1) infinite}@keyframes fly{0%{transform:translate(0,0)}20%{transform:translate(4px,-4px);opacity:.3}40%{transform:translate(8px,0);opacity:1}60%{transform:translate(4px,4px)}80%{transform:translate(0,4px);opacity:.3}}
 .glow{animation:halo 1.4s steps(2) infinite}@keyframes halo{0%,100%{opacity:.5}50%{opacity:.9}}` + REDUCED('.z{display:none}');
   writeSvg(out('assets/footer.svg'), W, H, 'Thanks for visiting!', css, L + g('tw0', stars[0]) + g('tw1', stars[1]) + title + g('glow', fireGlow) + log + mascot + fire + zs + flies);
 }
 
 function gameSprites() {
-  for (const [key, d] of Object.entries(LANDMARKS)) {
-    const one = new Layer(6, 6, 6).sprite(d.rows, 0, 0, d.pal);
-    outlineShape(one);
-    writeSvg(out(`play/lm-${key}.svg`), d.rows[0].length * 6 + 12, d.rows.length * 6 + 12, d.label, '', one.toString());
+  for (const key of Object.keys(LANDMARKS)) {
+    const d = drawLandmark(key, 6, 6, 6);
+    writeSvg(out(`play/lm-${key}.svg`), d.w + 12, d.h + 12, LANDMARKS[key].label, BASE_CSS + ART_CSS, d.svg);
   }
-  writeSvg(out('play/mascot-a.svg'), 40, 48, 'Mascot', '', new Layer(4).sprite(MASCOT_A, 0, 0, MASCOT_PAL).toString());
-  writeSvg(out('play/mascot-b.svg'), 40, 48, 'Mascot', '', new Layer(4).sprite(MASCOT_B, 0, 0, MASCOT_PAL).toString());
+  for (const kind of ['boy', 'girl']) for (const f of ['A', 'B'])
+    writeSvg(out(`play/${kind}-${f.toLowerCase()}.svg`), 32, 40, kind, '', charLayer(kind, f, 2, 0, 0).toString());
 }
 
 header();

@@ -14,11 +14,11 @@
     --cream: #fff1e8; --lavender: #83769c; --yellow: #ffec27; --orange: #ffa300; --plum: #7e2553; --pink: #ff77a8;
   }
   * { box-sizing: border-box; }
-  html { background: var(--ink); }
+  html { background: #0d1117; }
   body {
     margin: 0; min-height: 100vh; color: var(--cream);
     font: 15px/1.55 'Pixelify Sans', ui-monospace, monospace;
-    background: var(--ink);
+    background: #0d1117;
   }
   main { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
   a { color: var(--yellow); }
@@ -40,7 +40,7 @@
 
   .stage { position: relative; aspect-ratio: 800 / 400; padding: 6px; }
   .stage .map { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); image-rendering: pixelated; }
-  .hero { position: absolute; width: 5%; image-rendering: pixelated; pointer-events: none; transition: transform .08s; }
+  .hero { position: absolute; width: 4%; image-rendering: pixelated; pointer-events: none; transition: transform .08s; }
   .ping { position: absolute; width: 10px; height: 10px; background: var(--yellow); box-shadow: 0 0 0 2px var(--ink); animation: ping 0.8s steps(2) infinite; pointer-events: none; }
   @keyframes ping { 50% { opacity: 0; } }
 
@@ -58,6 +58,16 @@
   }
   .btn:hover { filter: brightness(1.15); }
   .actions[hidden] { display: none; }
+  .chip.btnlike { cursor: pointer; font: inherit; font-size: 13px; }
+  .picker { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(13, 17, 23, .86); z-index: 10; padding: 16px; }
+  .picker[hidden] { display: none; }
+  .picker .win { padding: 22px 26px; text-align: center; max-width: 420px; width: 100%; }
+  .picker h2 { margin: 0 0 6px; }
+  .picker p { margin: 0 0 18px; color: var(--lavender); font-size: 13px; }
+  .choices { display: flex; gap: 16px; justify-content: center; }
+  .choice { display: grid; gap: 8px; justify-items: center; padding: 14px 22px; font: inherit; font-weight: 600; color: var(--cream); background: var(--dusk); border: 3px solid var(--cream); box-shadow: inset 0 -4px 0 var(--ink); cursor: pointer; }
+  .choice:hover, .choice:focus-visible { background: var(--haze); }
+  .choice img { width: 64px; image-rendering: pixelated; }
   .hint { color: var(--lavender); font-size: 13px; }
 
   .pad { display: none; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); gap: 6px; justify-content: center; margin: 18px auto 0; }
@@ -91,16 +101,17 @@
     <div class="hud">
       <span class="chip keys"><kbd>WASD</kbd> or <kbd>arrows</kbd> to walk</span>
       <span class="chip">Visited <b id="count">0</b>/4</span>
+      <button class="chip btnlike" id="change" type="button">Change character</button>
     </div>
   </div>
 
   <div class="stage win" id="stage">
     <img class="map" src="map.svg" alt="Pixel island with four places: Tendril grove, DBLab tower, FileFlow workshop and AKARI shrine.">
-    <img class="hero" id="hero" src="mascot-a.svg" alt="">
+    <img class="hero" id="hero" src="boy-a.svg" alt="">
   </div>
 
   <section class="dialog win" aria-live="polite">
-    <div class="portrait"><img id="p-img" src="mascot-a.svg" alt=""></div>
+    <div class="portrait"><img id="p-img" src="boy-a.svg" alt=""></div>
     <div>
       <span class="name" id="p-name">ANRLLDEV</span>
       <p class="line"><span id="p-text"></span><span class="caret"></span></p>
@@ -116,6 +127,17 @@
     <button class="left" data-dir="left" aria-label="Walk left"></button>
     <button class="down" data-dir="down" aria-label="Walk down"></button>
     <button class="right" data-dir="right" aria-label="Walk right"></button>
+  </div>
+
+  <div class="picker" id="picker" role="dialog" aria-modal="true" aria-labelledby="pick-title" hidden>
+    <div class="win">
+      <h2 id="pick-title">Choose your character</h2>
+      <p>You can switch any time with the button at the top.</p>
+      <div class="choices">
+        <button class="choice" type="button" data-avatar="boy"><img src="boy-a.svg" alt="">Boy</button>
+        <button class="choice" type="button" data-avatar="girl"><img src="girl-a.svg" alt="">Girl</button>
+      </div>
+    </div>
   </div>
 
   <h2>All places</h2>
@@ -149,6 +171,23 @@
   const pos = { x: 100, y: 50 };
   const held = new Set();
   let current, last = performance.now(), walkClock = 0, typing;
+
+  let avatar = 'boy';
+  try { avatar = localStorage.getItem('avatar') || ''; } catch {}
+  const picker = $('picker');
+  function setAvatar(kind) {
+    avatar = kind;
+    try { localStorage.setItem('avatar', kind); } catch {}
+    hero.src = `${kind}-a.svg`; hero.dataset.f = '';
+    if (!current) $('p-img').src = `${kind}-a.svg`;
+    picker.hidden = true;
+    $('change').focus();
+  }
+  document.querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => setAvatar(b.dataset.avatar)));
+  $('change').addEventListener('click', () => { picker.hidden = false; picker.querySelector('.choice').focus(); });
+  picker.addEventListener('keydown', e => { if (e.key === 'Escape' && avatar) picker.hidden = true; });
+  if (avatar === 'boy' || avatar === 'girl') { hero.src = `${avatar}-a.svg`; $('p-img').src = `${avatar}-a.svg`; }
+  else { avatar = 'boy'; picker.hidden = false; }
 
   let visited = new Set();
   try { visited = new Set(JSON.parse(localStorage.getItem('visited') || '[]')); } catch {}
@@ -190,7 +229,7 @@
       if (!visited.has(place.key)) { visited.add(place.key); saveVisited(); renderPlaces(); }
     } else {
       $('p-name').textContent = 'ANRLLDEV';
-      $('p-img').src = 'mascot-a.svg';
+      $('p-img').src = `${avatar}-a.svg`;
       $('p-actions').hidden = true;
       type(visited.size === 4 ? 'You found every place. Thanks for walking around!' : IDLE);
     }
@@ -198,6 +237,7 @@
 
   const KEYS = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
   addEventListener('keydown', e => {
+    if (!picker.hidden) return;
     if (KEYS[e.code]) { held.add(KEYS[e.code]); e.preventDefault(); }
     if (e.code === 'Enter' && current && document.activeElement === document.body) location.href = current.url;
   });
@@ -222,16 +262,16 @@
       else if (walkable(nx, pos.y)) pos.x = nx;
       else if (walkable(pos.x, ny)) pos.y = ny;
       walkClock += dt;
-      const next = Math.floor(walkClock * 6) % 2 ? 'mascot-b.svg' : 'mascot-a.svg';
+      const next = `${avatar}-${Math.floor(walkClock * 6) % 2 ? 'b' : 'a'}.svg`;
       if (hero.dataset.f !== next) { hero.dataset.f = next; hero.src = next; }
     }
     const cell = (stage.clientWidth - 12) / 200;
-    hero.style.left = `${6 + Math.round(pos.x - 5) * cell}px`;
-    hero.style.top = `${6 + Math.round(pos.y - 12) * cell}px`;
+    hero.style.left = `${6 + Math.round(pos.x - 4) * cell}px`;
+    hero.style.top = `${6 + Math.round(pos.y - 10) * cell}px`;
     PLACES.forEach((p, i) => {
       pings[i].hidden = visited.has(p.key);
       pings[i].style.left = `${6 + (p.x - 1) * cell}px`;
-      pings[i].style.top = `${6 + (p.y - 17) * cell}px`;
+      pings[i].style.top = `${6 + (p.y - 14) * cell}px`;
     });
     show(PLACES.find(p => Math.hypot(p.x - pos.x, p.y - pos.y) < NEAR) || null);
     requestAnimationFrame(frame);
