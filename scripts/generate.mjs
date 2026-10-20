@@ -596,9 +596,12 @@ function questCard([key, name, desc, tags], i) {
     }
   }
 
-  const lmInfo = landmark(key), LS = 4;
+  // Scale the art so it always sits fully inside the frame, standing on the horizon.
+  const lmInfo = landmark(key), room = (horizon + 2 - (by + 3)) * P;
+  const LS = Math.min(4, Math.floor(room / lmInfo.h));
   const lx = bx * P + Math.round((bw * P - lmInfo.w * LS) / 2), ly = (horizon + 2) * P - lmInfo.h * LS;
-  const sprite = drawLandmark(key, LS, lx, ly).svg, extra = '';
+  const inner = `<clipPath id="tile"><rect x="${(bx + 2) * P}" y="${(by + 2) * P}" width="${(bw - 4) * P}" height="${(bh - 4) * P}"/></clipPath>`;
+  const sprite = `<g clip-path="url(#tile)">${drawLandmark(key, LS, lx, ly).svg}</g>`, extra = '';
 
   let y = Math.round((H - blockH) / 2);
   const T = new Layer(TP);
@@ -613,7 +616,7 @@ function questCard([key, name, desc, tags], i) {
 @keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}100%{opacity:0;transform:translate(10px,-30px)}}
 .drift{animation:drift 14s linear infinite}@keyframes drift{0%{transform:translateX(-16px)}50%{transform:translateX(16px)}100%{transform:translateX(-16px)}}` + REDUCED('.puff{display:none}');
   const decoSvg = key === 'tendril' || key === 'fileflow' || key === 'kompas' ? g('drift', decoB) + deco : g('tw0', deco) + g('tw1', decoB);
-  writeSvg(out(`assets/quest-${key}.svg`), W, H, `${name}: ${desc} ${tags}.`, css, L + box + decoSvg + sprite + extra + T + descL + tagL);
+  writeSvg(out(`assets/quest-${key}.svg`), W, H, `${name}: ${desc} ${tags}.`, css, `<defs>${inner}</defs>` + L + box + `<g clip-path="url(#tile)">${decoSvg}</g>` + sprite + extra + T + descL + tagL);
 }
 
 // ---------- footer: the mascot sleeps by a campfire ----------
