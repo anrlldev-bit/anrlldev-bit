@@ -1,9 +1,9 @@
 <p align="center">
-  <a href="https://anrlldev-bit.github.io/anrlldev-bit/play/"><img src="assets/header.svg" width="100%" alt="ANRLLDEV. Press start to play this profile as a small game." /></a>
+  <a href="https://anrlldev-bit.github.io/anrlldev-bit/play/"><img src="assets/header.svg" width="100%" alt="ANRLLDEV, two characters and a cat walking through a pixel city at night." /></a>
 </p>
 
 <p align="center">
-  <a href="https://anrlldev-bit.github.io/anrlldev-bit/play/"><img src="assets/btn-play.svg" width="60%" alt="Walk around the map" /></a>
+  <a href="https://anrlldev-bit.github.io/anrlldev-bit/play/"><img src="assets/btn-play.svg" width="38%" alt="Start" /></a>
 </p>
 
 <p align="center">
@@ -46,7 +46,7 @@
 <img src="assets/title-contact.svg" alt="Find me" />
 
 <p align="center">
-  <a href="https://www.instagram.com/ir.prat_/"><img src="assets/btn-instagram.svg" width="48%" alt="Instagram @ir.prat_" /></a>
+  <a href="https://www.instagram.com/ir.prat_/"><img src="assets/btn-instagram.svg" width="48%" alt="Instagram" /></a>
   <a href="https://www.linkedin.com/in/iqbalrizkipratamaib"><img src="assets/btn-linkedin.svg" width="48%" alt="LinkedIn" /></a>
 </p>
 

@@ -3,7 +3,7 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { charLayer, blinkLayer, landmark, drawLandmark, treeCells, ART_CSS } from './art.mjs';
+import { catLayer, charLayer, blinkLayer, landmark, drawLandmark, treeCells, ART_CSS } from './art.mjs';
 import {
   C, Layer, textWidth, g, at, pct, BASE_CSS, REDUCED, writeSvg, rng, frame, outlinedText, ICON, panel,
   MASCOT_A, MASCOT_B, MASCOT_SLEEP, MASCOT_PAL,
@@ -15,6 +15,8 @@ const TAU = Math.PI * 2;
 
 // Both characters walking side by side; gap is the girl's offset from the boy in pixels.
 const duo = (px, gap) => g('fa', charLayer('boy', 'A', px, 0, 0).toString() + charLayer('girl', 'A', px, gap, 0)) + g('fb', charLayer('boy', 'B', px, 0, 0).toString() + charLayer('girl', 'B', px, gap, 0));
+// The cat trots behind; cx is its left edge relative to the boy, feet on the same line.
+const withCat = (px, gap, cx) => duo(px, gap) + g('fb', catLayer('A', px, cx, 11 * px)) + g('fa', catLayer('B', px, cx, 11 * px));
 
 // Ink outline around whatever is already drawn, so shapes hold up on white and dark pages.
 function outlineShape(L, color = C.ink) {
@@ -135,8 +137,7 @@ function header() {
     g('sc0', clouds), g('sc1', far), g('sc2', city + win + g('tw1', winF)), g('sc3', ground),
     title,
     `<g clip-path="url(#logo)"><g class="shine"><rect x="${tx * LP - 60}" y="0" width="24" height="${H}" fill="${C.cream}" opacity=".75"/></g></g>`,
-    g('blink', press),
-    at(170, GROUND * P - 60, duo(3, 56)),
+    at(230, GROUND * P - 60, withCat(3, 56, -40)),
   ].join('');
   writeSvg(out('assets/header.svg'), W, H, 'ANRLLDEV. Press start to play this profile as a small game.', css, body);
 }
@@ -469,7 +470,7 @@ function map({ withWalker }) {
       kf += `${pct((f.t / t) * 100)}{transform:translate(${(f.xy[0] - sx) * P}px,${(f.xy[1] - sy) * P}px)${tf}}`;
     });
     css += `.route{animation:route ${t.toFixed(2)}s infinite}@keyframes route{${kf}}`;
-    const walkers = at((sx - 4) * P, (sy - 10) * P, g('route', duo(2, -34)));
+    const walkers = at((sx - 4) * P, (sy - 10) * P, g('route', withCat(2, -34, -56)));
     const body = ground + mtn + drawAll(behind) + walkers + drawAll(front) + g('lampglow', glowLayer) + clouds;
     writeSvg(out('assets/map.svg'), W, H, MAP_LABEL, css + REDUCED('.puff{display:none}'), body);
   } else {
@@ -637,7 +638,7 @@ function footer() {
   const THANKS = 'THANKS FOR VISITING';
   const title = new Layer(3);
   outlinedText(title, THANKS, Math.round((W / 3 - textWidth(THANKS)) / 2), 9, { fill: cy => (cy < 4 ? C.cream : C.silver), outline: C.ink, shadow: C.plum });
-  const mascot = charLayer('boy', 'A', 3, 300, GROUND * P - 60, { asleep: true }).toString() + charLayer('girl', 'A', 3, 344, GROUND * P - 60, { asleep: true });
+  const mascot = charLayer('boy', 'A', 3, 300, GROUND * P - 60, { asleep: true }).toString() + charLayer('girl', 'A', 3, 344, GROUND * P - 60, { asleep: true }) + catLayer('A', 3, 444, GROUND * P - 27, { asleep: true });
   const log = new Layer(P).rect(73, GROUND - 4, 25, 4, C.brown).rect(73, GROUND - 4, 25, 1, '#c97b4a').rect(73, GROUND - 1, 25, 1, C.dirt).set(73, GROUND - 3, C.dirt).set(97, GROUND - 3, C.dirt);
 
   const FIRE = [
@@ -668,6 +669,7 @@ function gameSprites() {
   }
   for (const kind of ['boy', 'girl']) for (const f of ['A', 'B'])
     writeSvg(out(`play/${kind}-${f.toLowerCase()}.svg`), 32, 40, kind, '', charLayer(kind, f, 2, 0, 0).toString());
+  for (const f of ['A', 'B']) writeSvg(out(`play/cat-${f.toLowerCase()}.svg`), 20, 18, 'cat', '', catLayer(f, 2, 0, 0).toString());
 }
 
 header();
@@ -679,8 +681,8 @@ ribbon('title-quests.svg', 'QUEST LOG');
 ribbon('title-stats.svg', 'STATS');
 ribbon('title-contact.svg', 'FIND ME');
 QUESTS.forEach(questCard);
-button('btn-play.svg', 'WALK AROUND THE MAP', 480);
-button('btn-instagram.svg', 'INSTAGRAM @ir.prat_', 390);
+button('btn-play.svg', 'START', 300);
+button('btn-instagram.svg', 'INSTAGRAM', 390);
 button('btn-linkedin.svg', 'LINKEDIN', 390);
 footer();
 gameSprites();

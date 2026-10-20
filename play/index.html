@@ -43,7 +43,7 @@
   .world > img { position: absolute; image-rendering: pixelated; pointer-events: none; }
   .world .map { inset: 0; width: 100%; height: 100%; }
   .world .hero { width: 4%; }
-  .ping { position: absolute; z-index: 9999; width: 10px; height: 10px; background: var(--yellow); box-shadow: 0 0 0 2px var(--ink); animation: ping 0.8s steps(2) infinite; pointer-events: none; }
+  .world .cat { width: 2.5%; }
   @keyframes ping { 50% { opacity: 0; } }
 
   .dialog { display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: center; margin-top: 18px; padding: 18px 22px; min-height: 150px; }
@@ -85,8 +85,7 @@
   .places li { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; padding: 14px; }
   .places img { width: 44px; image-rendering: pixelated; }
   .places b { display: block; color: var(--cream); font-weight: 600; }
-  .places p { margin: 2px 0 6px; color: var(--lavender); font-size: 13px; line-height: 1.45; }
-  .places .seen { color: var(--yellow); font-size: 12px; }
+  .places p { margin: 2px 0 12px; color: var(--lavender); font-size: 13px; line-height: 1.45; }
   footer { margin-top: 32px; font-size: 13px; color: var(--lavender); }
 
   @media (max-width: 520px) {
@@ -111,6 +110,7 @@
     <div class="world" id="world">
       <img class="map" src="map.svg" alt="Pixel island with a lake, a ring road and six places: Kompas signpost, Ivory tower, Tendril tree, DBLab library, FileFlow workshop and AKARI shrine.">
       <img class="hero" id="hero" src="boy-a.svg" alt="">
+      <img class="cat" id="cat" src="cat-a.svg" alt="">
     </div>
   </div>
 
@@ -180,6 +180,8 @@
   const $ = id => document.getElementById(id);
   const stage = $('stage'), world = $('world'), hero = $('hero');
   const pos = { x: 100, y: 31 };
+  // The cat follows the player's path a short way behind.
+  const trail = [], cat = $('cat');
   const held = new Set();
   let current, last = performance.now(), walkClock = 0, typing;
 
@@ -207,7 +209,7 @@
   function renderPlaces() {
     $('count').textContent = visited.size;
     $('places').innerHTML = PLACES.map(p => `<li class="win"><img src="lm-${p.key}.svg" alt=""><div>
-      <b>${p.name}</b><p>${p.text}</p><a href="${p.url}">Open ${p.name}</a>${visited.has(p.key) ? ' <span class="seen">visited</span>' : ''}</div></li>`).join('');
+      <b>${p.name}</b><p>${p.text}</p><a class="btn" href="${p.url}">Open site</a></div></li>`).join('');
   }
 
   // Scenery as separate images, stacked by the row each one stands on.
@@ -218,14 +220,6 @@
     Object.assign(img.style, { left: pct(o.x, 200), top: pct(o.y, 100), width: pct(o.w, 200), zIndex: String(o.z * 10) });
     world.appendChild(img);
   }
-
-  // Pings above each sign until it has been visited.
-  const pings = PLACES.map(p => {
-    const el = document.createElement('span');
-    el.className = 'ping';
-    world.appendChild(el);
-    return el;
-  });
 
   function type(str) {
     clearInterval(typing);
@@ -289,11 +283,15 @@
     hero.style.left = pct(Math.round(pos.x) - 4, 200);
     hero.style.top = pct(Math.round(pos.y) - 10, 100);
     hero.style.zIndex = String(Math.round(pos.y) * 10 + 5);
-    PLACES.forEach((p, i) => {
-      pings[i].hidden = visited.has(p.key);
-      pings[i].style.left = `${(p.x - 1) * cell}px`;
-      pings[i].style.top = `${(p.y - 14) * cell}px`;
-    });
+    const tail = trail[trail.length - 1];
+    if (!tail || Math.hypot(tail.x - pos.x, tail.y - pos.y) > 0.5) trail.push({ x: pos.x, y: pos.y });
+    if (trail.length > 24) trail.shift();
+    const c = trail.length > 16 ? trail[trail.length - 17] : { x: pos.x - 6, y: pos.y };
+    cat.style.left = pct(Math.round(c.x) - 2.5, 200);
+    cat.style.top = pct(Math.round(c.y) - 4.5, 100);
+    cat.style.zIndex = String(Math.round(c.y) * 10 + 4);
+    const cf = `cat-${Math.floor(walkClock * 6) % 2 ? 'b' : 'a'}.svg`;
+    if (cat.dataset.f !== cf) { cat.dataset.f = cf; cat.src = cf; }
     show(PLACES.find(p => Math.hypot(p.x - pos.x, p.y - pos.y) < NEAR) || null);
     requestAnimationFrame(frame);
   }

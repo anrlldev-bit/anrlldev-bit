@@ -55,6 +55,19 @@ export const CHARS = {
 };
 for (const [name, c] of Object.entries(CHARS)) for (const f of ['A', 'B']) c[f].forEach((r, i) => { if (r.length !== 16) throw new Error(`${name} ${f} row ${i} is ${r.length} wide`); });
 
+// Orange-and-white cat, 10 x 9, two walk frames.
+const CAT_TOP = ['.oo....oo.', '.orooooro.', '.orrrrrro.', '.oerwwreo.', '.owwppwwo.', '..owwwwo..', '.orrwwrro.', '.orrwwrrRo'];
+export const CAT = {
+  A: [...CAT_TOP, '.oo....oo.'],
+  B: [...CAT_TOP, '..oo..oo..'],
+  pal: { o: INK, r: '#ff9a3c', R: '#d9741f', w: '#fff6ea', p: '#ff8fa3', e: INK },
+};
+export function catLayer(frame, px, ox, oy, { asleep = false } = {}) {
+  const L = new Layer(px, ox, oy).sprite(CAT[frame], 0, 0, CAT.pal);
+  if (asleep) L.set(2, 3, CAT.pal.r).set(7, 3, CAT.pal.r).set(2, 4, INK).set(7, 4, INK);
+  return L;
+}
+
 export function charLayer(kind, frame, px, ox, oy, { asleep = false } = {}) {
   const c = CHARS[kind];
   const L = new Layer(px, ox, oy).sprite(c[frame], 0, 0, c.pal);
