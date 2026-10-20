@@ -637,7 +637,7 @@ function footer() {
   for (let x = 0; x < CW; x++) if (rnd() < 0.12) L.set(x, GROUND - 1, C.green);
   const THANKS = 'THANKS FOR VISITING';
   const title = new Layer(3);
-  outlinedText(title, THANKS, Math.round((W / 3 - textWidth(THANKS)) / 2), 9, { fill: cy => (cy < 4 ? C.cream : C.silver), outline: C.ink, shadow: C.plum });
+  outlinedText(title, THANKS, Math.round((W / 3 - textWidth(THANKS)) / 2), 12, { fill: cy => (cy < 4 ? C.cream : C.silver), outline: C.ink, shadow: C.plum });
   const mascot = charLayer('boy', 'A', 3, 300, GROUND * P - 60, { asleep: true }).toString() + charLayer('girl', 'A', 3, 344, GROUND * P - 60, { asleep: true }) + catLayer('A', 3, 444, GROUND * P - 27, { asleep: true });
   const log = new Layer(P).rect(73, GROUND - 4, 25, 4, C.brown).rect(73, GROUND - 4, 25, 1, '#c97b4a').rect(73, GROUND - 1, 25, 1, C.dirt).set(73, GROUND - 3, C.dirt).set(97, GROUND - 3, C.dirt);
 
@@ -659,7 +659,7 @@ function footer() {
 @keyframes z{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}10%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translate(14px,-8px)}}
 .fly{animation:fly 4.5s steps(1) infinite}@keyframes fly{0%{transform:translate(0,0)}20%{transform:translate(4px,-4px);opacity:.3}40%{transform:translate(8px,0);opacity:1}60%{transform:translate(4px,4px)}80%{transform:translate(0,4px);opacity:.3}}
 .glow{animation:halo 1.4s steps(2) infinite}@keyframes halo{0%,100%{opacity:.5}50%{opacity:.9}}` + REDUCED('.z{display:none}');
-  writeSvg(out('assets/footer.svg'), W, H, 'Thanks for visiting!', css, L + g('tw0', stars[0]) + g('tw1', stars[1]) + title + g('glow', fireGlow) + log + mascot + fire + zs + flies);
+  writeSvg(out('assets/footer.svg'), W, H, 'Thanks for visiting!', css, L + g('tw0', stars[0]) + g('tw1', stars[1]) + title + at(16, 0, g('glow', fireGlow) + log + mascot + fire + zs) + flies);
 }
 
 function gameSprites() {
