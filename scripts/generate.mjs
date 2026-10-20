@@ -572,6 +572,11 @@ function snakePlaceholder() {
 }
 
 function gameSprites() {
+  for (const [key, d] of Object.entries(LANDMARKS)) {
+    const one = new Layer(6, 6, 6).sprite(d.rows, 0, 0, d.pal);
+    outlineShape(one);
+    writeSvg(out(`play/lm-${key}.svg`), d.rows[0].length * 6 + 12, d.rows.length * 6 + 12, d.label, '', one.toString());
+  }
   writeSvg(out('play/mascot-a.svg'), 40, 48, 'Mascot', '', new Layer(4).sprite(MASCOT_A, 0, 0, MASCOT_PAL).toString());
   writeSvg(out('play/mascot-b.svg'), 40, 48, 'Mascot', '', new Layer(4).sprite(MASCOT_B, 0, 0, MASCOT_PAL).toString());
 }

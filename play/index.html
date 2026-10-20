@@ -4,72 +4,113 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>anrlldev world map</title>
-<meta name="description" content="Walk around a small pixel map and visit anrlldev's projects.">
+<meta name="description" content="Walk around a small pixel island and visit anrlldev's projects.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #0b0a1a; --night: #13112e; --haze: #2a2163;
-    --cream: #fff1e8; --yellow: #ffec27; --moss: #008751;
+    --ink: #0b0a1a; --night: #13112e; --dusk: #1c1847; --haze: #2a2163;
+    --cream: #fff1e8; --lavender: #83769c; --yellow: #ffec27; --orange: #ffa300; --plum: #7e2553; --pink: #ff77a8;
   }
   * { box-sizing: border-box; }
+  html { background: var(--ink); }
   body {
-    margin: 0; min-height: 100vh; background: var(--ink); color: var(--cream);
-    font-family: 'Pixelify Sans', ui-monospace, monospace; font-size: 18px; line-height: 1.5;
+    margin: 0; min-height: 100vh; color: var(--cream);
+    font: 15px/1.55 'Pixelify Sans', ui-monospace, monospace;
+    background: radial-gradient(ellipse at 50% -20%, var(--dusk), var(--ink) 60%);
   }
-  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; }
-  h1 { font-size: 32px; font-weight: 600; color: var(--yellow); margin: 0 0 4px; }
-  p { margin: 0 0 12px; }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
   a { color: var(--yellow); }
   :focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
 
-  .stage { position: relative; width: 100%; aspect-ratio: 800 / 400; margin: 16px 0; }
-  .stage > img.map { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
-  .hero { position: absolute; width: 5%; image-rendering: pixelated; pointer-events: none; }
-
-  .panel {
-    min-height: 132px; background: var(--night); border: 4px solid var(--cream);
-    padding: 14px 18px; margin-bottom: 16px;
+  /* Pixel window: ink edge, cream ring, lavender ring, as on the profile. */
+  .win {
+    background: var(--night); border: 3px solid var(--cream);
+    box-shadow: 0 0 0 3px var(--ink), inset 0 0 0 3px var(--lavender), inset 0 0 0 6px var(--ink);
   }
-  .panel h2 { margin: 0 0 4px; font-size: 22px; color: var(--yellow); font-weight: 600; }
-  .panel .hint { color: #c2c3c7; }
-  .panel a[hidden] { display: none; }
-  .panel a { display: inline-block; margin-top: 6px; padding: 10px 14px; min-height: 44px;
-    background: var(--yellow); color: var(--ink); text-decoration: none; font-weight: 600; }
 
-  .pad { display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 56px);
-    gap: 6px; justify-content: center; margin: 0 auto 24px; }
-  .pad button { font: inherit; font-size: 22px; background: var(--haze); color: var(--cream);
-    border: 3px solid var(--cream); cursor: pointer; touch-action: none; user-select: none; }
-  .pad button:active { background: var(--moss); }
-  .pad button::after { content: ''; display: block; width: 16px; height: 16px; margin: auto; background: var(--cream);
-    clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .title { display: flex; align-items: baseline; gap: 10px; }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; color: var(--yellow); text-shadow: 2px 2px 0 var(--plum); }
+  .title span { color: var(--lavender); font-size: 13px; }
+  .hud { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+  .chip { padding: 3px 9px; background: var(--ink); border: 2px solid var(--haze); color: var(--cream); }
+  .chip b { color: var(--yellow); font-weight: 600; }
+  kbd { font: inherit; padding: 0 5px; border: 2px solid var(--lavender); border-bottom-width: 4px; background: var(--dusk); }
+
+  .stage { position: relative; aspect-ratio: 800 / 400; padding: 6px; }
+  .stage .map { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); image-rendering: pixelated; }
+  .hero { position: absolute; width: 5%; image-rendering: pixelated; pointer-events: none; transition: transform .08s; }
+  .ping { position: absolute; width: 10px; height: 10px; background: var(--yellow); box-shadow: 0 0 0 2px var(--ink); animation: ping 0.8s steps(2) infinite; pointer-events: none; }
+  @keyframes ping { 50% { opacity: 0; } }
+
+  .dialog { display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: center; margin-top: 18px; padding: 18px 22px; min-height: 150px; }
+  .portrait { width: 96px; height: 96px; display: grid; place-items: center; background: var(--dusk); border: 3px solid var(--cream); box-shadow: inset 0 0 0 3px var(--ink); }
+  .portrait img { max-width: 72px; max-height: 76px; image-rendering: pixelated; }
+  .name { display: inline-block; padding: 1px 10px; margin-bottom: 6px; background: var(--plum); border: 2px solid var(--ink); color: var(--yellow); font-weight: 600; font-size: 14px; }
+  .line { margin: 0; min-height: 3.1em; }
+  .line .caret { display: inline-block; width: 8px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--yellow); animation: ping 0.8s steps(2) infinite; }
+  .actions { display: flex; gap: 12px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 8px 16px; min-height: 40px; font: inherit; font-weight: 600; text-decoration: none;
+    color: var(--yellow); background: var(--plum); border: 2px solid var(--ink);
+    box-shadow: inset 0 2px 0 var(--pink), inset 0 -4px 0 #3b0f28;
+  }
+  .btn:hover { filter: brightness(1.15); }
+  .actions[hidden] { display: none; }
+  .hint { color: var(--lavender); font-size: 13px; }
+
+  .pad { display: none; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); gap: 6px; justify-content: center; margin: 18px auto 0; }
+  @media (pointer: coarse) { .pad { display: grid; } .keys { display: none; } }
+  .pad button { background: var(--dusk); border: 2px solid var(--cream); box-shadow: inset 0 -4px 0 var(--ink); cursor: pointer; touch-action: none; user-select: none; }
+  .pad button:active { background: var(--haze); box-shadow: none; }
+  .pad button::after { content: ''; display: block; width: 14px; height: 14px; margin: auto; background: var(--cream); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .pad .up { grid-column: 2; } .pad .left { grid-column: 1; grid-row: 2; } .pad .down { grid-column: 2; grid-row: 2; } .pad .right { grid-column: 3; grid-row: 2; }
   .pad .right::after { transform: rotate(90deg); } .pad .down::after { transform: rotate(180deg); } .pad .left::after { transform: rotate(270deg); }
-  .pad .up { grid-column: 2; } .pad .left { grid-column: 1; grid-row: 2; }
-  .pad .down { grid-column: 2; grid-row: 2; } .pad .right { grid-column: 3; grid-row: 2; }
 
-  .places { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-  .places li { background: var(--night); padding: 10px 14px; }
-  .places b { color: var(--yellow); font-weight: 600; }
-  h3 { font-size: 20px; margin: 28px 0 10px; font-weight: 600; }
-  footer { margin-top: 32px; color: #c2c3c7; }
+  h2 { font-size: 16px; font-weight: 600; color: var(--yellow); margin: 32px 0 12px; }
+  .places { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .places li { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; padding: 14px; }
+  .places img { width: 44px; image-rendering: pixelated; }
+  .places b { display: block; color: var(--cream); font-weight: 600; }
+  .places p { margin: 2px 0 6px; color: var(--lavender); font-size: 13px; line-height: 1.45; }
+  .places .seen { color: var(--yellow); font-size: 12px; }
+  footer { margin-top: 32px; font-size: 13px; color: var(--lavender); }
+
+  @media (max-width: 520px) {
+    .title span { display: none; }
+    .dialog { grid-template-columns: 64px 1fr; padding: 14px; gap: 12px; }
+    .portrait { width: 64px; height: 64px; } .portrait img { max-width: 48px; max-height: 50px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ping, .line .caret { animation: none; } }
 </style>
 </head>
 <body>
 <main>
-  <h1>anrlldev world map</h1>
-  <p>Walk with the arrow keys or WASD (or the buttons below on a phone). Stand next to a place to read about it.</p>
+  <div class="bar">
+    <div class="title"><h1>anrlldev world map</h1><span>a tiny walkable portfolio</span></div>
+    <div class="hud">
+      <span class="chip keys"><kbd>WASD</kbd> or <kbd>arrows</kbd> to walk</span>
+      <span class="chip">Visited <b id="count">0</b>/4</span>
+    </div>
+  </div>
 
-  <div class="stage" id="stage">
-    <img class="map" src="map.svg" alt="Pixel island map with four places: Tendril grove, DBLab tower, FileFlow workshop and AKARI shrine.">
+  <div class="stage win" id="stage">
+    <img class="map" src="map.svg" alt="Pixel island with four places: Tendril grove, DBLab tower, FileFlow workshop and AKARI shrine.">
     <img class="hero" id="hero" src="mascot-a.svg" alt="">
   </div>
 
-  <section class="panel" id="panel" aria-live="polite">
-    <h2 id="p-title">Nobody here yet</h2>
-    <p id="p-body" class="hint">Walk to one of the four places on the map.</p>
-    <a id="p-link" href="#" hidden>Open site</a>
+  <section class="dialog win" aria-live="polite">
+    <div class="portrait"><img id="p-img" src="mascot-a.svg" alt=""></div>
+    <div>
+      <span class="name" id="p-name">ANRLLDEV</span>
+      <p class="line"><span id="p-text"></span><span class="caret"></span></p>
+      <div class="actions" id="p-actions" hidden>
+        <a class="btn" id="p-link" href="#">Open site</a>
+        <span class="hint keys">or press <kbd>Enter</kbd></span>
+      </div>
+    </div>
   </section>
 
   <div class="pad" aria-label="Movement buttons">
@@ -79,7 +120,7 @@
     <button class="right" data-dir="right" aria-label="Walk right"></button>
   </div>
 
-  <h3>All places</h3>
+  <h2>All places</h2>
   <ul class="places" id="places"></ul>
 
   <footer><a href="https://github.com/anrlldev-bit">Back to the GitHub profile</a></footer>
@@ -88,28 +129,74 @@
 <script>
   // Map is 200 x 100 cells; positions are the mascot's feet.
   const PLACES = [
-    { name: 'Tendril', x: 46, y: 40, url: 'https://tendrilapp.vercel.app',
-      text: 'An Android chat app that works over Bluetooth, no internet needed. Kotlin and Jetpack Compose.' },
-    { name: 'DBLab', x: 146, y: 40, url: 'https://dblabapp.vercel.app',
+    { key: 'tendril', name: 'Tendril', x: 46, y: 40, url: 'https://tendrilapp.vercel.app',
+      text: 'An Android chat app that works over Bluetooth, no internet needed. Built with Kotlin and Jetpack Compose.' },
+    { key: 'dblab', name: 'DBLab', x: 146, y: 40, url: 'https://dblabapp.vercel.app',
       text: 'SQL lessons in Indonesian. Queries run right in the browser with sql.js. Built with Next.js.' },
-    { name: 'FileFlow', x: 38, y: 61, url: 'https://fileflowpc.vercel.app',
+    { key: 'fileflow', name: 'FileFlow', x: 38, y: 61, url: 'https://fileflowpc.vercel.app',
       text: 'A desktop app that automates file chores. Built with Tauri.' },
-    { name: 'AKARI', x: 164, y: 61, url: 'https://akarijapaneseclub.vercel.app',
+    { key: 'akari', name: 'AKARI', x: 164, y: 61, url: 'https://akarijapaneseclub.vercel.app',
       text: 'Website for a Japanese culture club, with a meetings and attendance area. Next.js and Supabase.' },
   ];
-  const NEAR = 12, SPEED = 22, MIN = { x: 10, y: 18 }, MAX = { x: 190, y: 92 };
+  const IDLE = 'Halo! Walk to one of the four signs on the island to read about it.';
+  const NEAR = 12, SPEED = 24;
 
-  const stage = document.getElementById('stage');
-  const hero = document.getElementById('hero');
-  const title = document.getElementById('p-title');
-  const body = document.getElementById('p-body');
-  const link = document.getElementById('p-link');
-  const pos = { x: 100, y: 52 };
+  // Same shapes the map generator uses, so the mascot stays on land and out of the lake.
+  const island = (x, y) => ((x - 100) / 96) ** 4 + ((y - 50) / 47) ** 4 - 0.05 * Math.sin(x * 0.31) - 0.05 * Math.cos(y * 0.45 + x * 0.07);
+  const lake = (x, y) => ((x - 100) / 21) ** 2 + ((y - 75) / 7) ** 2;
+  const walkable = (x, y) => island(x, y) <= 0.8 && lake(x, y) > 1.3;
+
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), hero = $('hero');
+  const pos = { x: 100, y: 50 };
   const held = new Set();
-  let current = null, last = performance.now(), walkClock = 0;
+  let current, last = performance.now(), walkClock = 0, typing;
 
-  document.getElementById('places').innerHTML = PLACES.map(p =>
-    `<li><b>${p.name}</b>: ${p.text} <a href="${p.url}">Open ${p.name}</a></li>`).join('');
+  let visited = new Set();
+  try { visited = new Set(JSON.parse(localStorage.getItem('visited') || '[]')); } catch {}
+  const saveVisited = () => { try { localStorage.setItem('visited', JSON.stringify([...visited])); } catch {} };
+
+  function renderPlaces() {
+    $('count').textContent = visited.size;
+    $('places').innerHTML = PLACES.map(p => `<li class="win"><img src="lm-${p.key}.svg" alt=""><div>
+      <b>${p.name}</b><p>${p.text}</p><a href="${p.url}">Open ${p.name}</a>${visited.has(p.key) ? ' <span class="seen">visited</span>' : ''}</div></li>`).join('');
+  }
+
+  // Pings above each sign until it has been visited.
+  const pings = PLACES.map(p => {
+    const el = document.createElement('span');
+    el.className = 'ping';
+    stage.appendChild(el);
+    return el;
+  });
+
+  function type(str) {
+    clearInterval(typing);
+    const out = $('p-text');
+    let i = 0;
+    out.textContent = '';
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { out.textContent = str; return; }
+    typing = setInterval(() => { out.textContent = str.slice(0, ++i); if (i >= str.length) clearInterval(typing); }, 18);
+  }
+
+  function show(place) {
+    if (place === current) return;
+    current = place;
+    if (place) {
+      $('p-name').textContent = place.name.toUpperCase();
+      $('p-img').src = `lm-${place.key}.svg`;
+      $('p-link').href = place.url;
+      $('p-link').textContent = `Open ${place.name}`;
+      $('p-actions').hidden = false;
+      type(place.text);
+      if (!visited.has(place.key)) { visited.add(place.key); saveVisited(); renderPlaces(); }
+    } else {
+      $('p-name').textContent = 'ANRLLDEV';
+      $('p-img').src = 'mascot-a.svg';
+      $('p-actions').hidden = true;
+      type(visited.size === 4 ? 'You found every place. Thanks for walking around!' : IDLE);
+    }
+  }
 
   const KEYS = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
   addEventListener('keydown', e => {
@@ -118,32 +205,11 @@
   });
   addEventListener('keyup', e => { if (KEYS[e.code]) held.delete(KEYS[e.code]); });
   addEventListener('blur', () => held.clear());
-
   document.querySelectorAll('.pad button').forEach(btn => {
     const dir = btn.dataset.dir;
     btn.addEventListener('pointerdown', e => { held.add(dir); try { btn.setPointerCapture(e.pointerId); } catch {} });
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => btn.addEventListener(ev, () => held.delete(dir)));
-    btn.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'Enter') { held.add(dir); e.preventDefault(); } });
-    btn.addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'Enter') held.delete(dir); });
   });
-
-  function show(place) {
-    if (place === current) return;
-    current = place;
-    if (place) {
-      title.textContent = place.name;
-      body.textContent = place.text;
-      body.classList.remove('hint');
-      link.href = place.url;
-      link.textContent = `Open ${place.name}`;
-      link.hidden = false;
-    } else {
-      title.textContent = 'Nobody here yet';
-      body.textContent = 'Walk to one of the four places on the map.';
-      body.classList.add('hint');
-      link.hidden = true;
-    }
-  }
 
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
@@ -152,18 +218,30 @@
     if (held.has('left')) dx--; if (held.has('right')) dx++;
     if (held.has('up')) dy--; if (held.has('down')) dy++;
     if (dx || dy) {
-      const len = Math.hypot(dx, dy);
-      pos.x = Math.min(MAX.x, Math.max(MIN.x, pos.x + (dx / len) * SPEED * dt));
-      pos.y = Math.min(MAX.y, Math.max(MIN.y, pos.y + (dy / len) * SPEED * dt));
+      const len = Math.hypot(dx, dy), step = SPEED * dt;
+      const nx = pos.x + (dx / len) * step, ny = pos.y + (dy / len) * step;
+      if (walkable(nx, ny)) { pos.x = nx; pos.y = ny; }
+      else if (walkable(nx, pos.y)) pos.x = nx;
+      else if (walkable(pos.x, ny)) pos.y = ny;
       walkClock += dt;
-      hero.src = Math.floor(walkClock * 4) % 2 ? 'mascot-b.svg' : 'mascot-a.svg';
+      const next = Math.floor(walkClock * 6) % 2 ? 'mascot-b.svg' : 'mascot-a.svg';
+      if (hero.dataset.f !== next) { hero.dataset.f = next; hero.src = next; }
     }
-    const cell = stage.clientWidth / 200;
-    hero.style.left = `${Math.round(pos.x - 5) * cell}px`;
-    hero.style.top = `${Math.round(pos.y - 12) * cell}px`;
+    const cell = (stage.clientWidth - 12) / 200;
+    hero.style.left = `${6 + Math.round(pos.x - 5) * cell}px`;
+    hero.style.top = `${6 + Math.round(pos.y - 12) * cell}px`;
+    PLACES.forEach((p, i) => {
+      pings[i].hidden = visited.has(p.key);
+      pings[i].style.left = `${6 + (p.x - 1) * cell}px`;
+      pings[i].style.top = `${6 + (p.y - 17) * cell}px`;
+    });
     show(PLACES.find(p => Math.hypot(p.x - pos.x, p.y - pos.y) < NEAR) || null);
     requestAnimationFrame(frame);
   }
+
+  renderPlaces();
+  type(visited.size === 4 ? 'You found every place. Thanks for walking around!' : IDLE);
+  current = null;
   requestAnimationFrame(frame);
 </script>
 </body>
