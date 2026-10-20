@@ -108,13 +108,13 @@ function header() {
   ground.tileX(CW);
 
   const NAME = 'ANRLLDEV';
-  const tw = textWidth(NAME, { scale: 2 }), tx = Math.floor((CW - tw) / 2), ty = 9;
-  const title = new Layer(P);
+  const LP = 3, tw = textWidth(NAME, { scale: 2 }), tx = Math.round((W / LP - tw) / 2), ty = 13;
+  const title = new Layer(LP);
   const titleCells = outlinedText(title, NAME, tx, ty, { scale: 2, fill: cy => (cy < 6 ? C.yellow : cy < 8 ? (cy % 2 ? C.orange : C.yellow) : C.orange), outline: C.ink, shadow: C.plum });
 
   const PRESS = 'PRESS START';
-  const press = new Layer(P);
-  outlinedText(press, PRESS, Math.floor((CW - textWidth(PRESS)) / 2), 31, { fill: C.cream, outline: C.ink });
+  const press = new Layer(2);
+  outlinedText(press, PRESS, Math.round((W / 2 - textWidth(PRESS)) / 2), 54, { fill: C.cream, outline: C.ink });
 
   const css = BASE_CSS + `
 .tw2{animation:tw 2s steps(1) -.5s infinite}
@@ -124,15 +124,15 @@ function header() {
 @keyframes shoot{0%,40%{opacity:0;transform:translate(0,0)}40.01%{opacity:1;transform:translate(0,0);animation-timing-function:steps(30,end)}52%{opacity:1;transform:translate(240px,120px)}52.01%,100%{opacity:0;transform:translate(240px,120px)}}
 .halo{animation:halo 4s ease-in-out infinite}@keyframes halo{0%,100%{opacity:.35}50%{opacity:.8}}
 .fa,.fb{animation-duration:.36s}.fb{animation-delay:-.18s}
-` + shineCss('shine', tw * P + 120) + REDUCED('.shoot,.shine{display:none}');
+` + shineCss('shine', tw * LP + 120) + REDUCED('.shoot,.shine{display:none}');
 
   const body = [
-    `<defs><clipPath id="logo"><path d="${cellsPath(titleCells, P)}"/></clipPath></defs>`,
+    `<defs><clipPath id="logo"><path d="${cellsPath(titleCells, LP)}"/></clipPath></defs>`,
     sky, g('halo', halo), moon, g('tw0', stars[0]), g('tw1', stars[1]), g('tw2', stars[2]),
     at(150, 0, g('shoot', shoot)),
     g('sc0', clouds), g('sc1', far), g('sc2', city + win + g('tw1', winF)), g('sc3', ground),
     title,
-    `<g clip-path="url(#logo)"><g class="shine"><rect x="${tx * P - 60}" y="0" width="24" height="${H}" fill="${C.cream}" opacity=".75"/></g></g>`,
+    `<g clip-path="url(#logo)"><g class="shine"><rect x="${tx * LP - 60}" y="0" width="24" height="${H}" fill="${C.cream}" opacity=".75"/></g></g>`,
     g('blink', press),
     at(180, (GROUND - 12) * P, walker()),
   ].join('');
@@ -153,9 +153,9 @@ function wrap(text, maxCells) {
 }
 
 function about() {
-  const P = 4, TP = 3, CW = 200, W = CW * P;
-  const TEXT = "Halo! I'm anrlldev. Right now I'm building a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club.";
-  const TX = 184, TY = 80, LH = 30;
+  const P = 4, TP = 2, CW = 200, W = CW * P;
+  const TEXT = "Halo! I'm anrlldev. Right now I'm building a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club. Every quest card below opens the real site, and the stats and snake further down refresh every day.";
+  const TX = 184, TY = 76, LH = 24;
   const LINES = wrap(TEXT, Math.floor((W - TX - 32) / TP));
   const CH = Math.max(52, Math.ceil((TY + LINES.length * LH + 20) / P));
   const H = CH * P;
@@ -174,8 +174,8 @@ function about() {
 
   const tag = new Layer(TP);
   const nameW = textWidth('ANRLLDEV');
-  frame(tag, nameW + 8, 13, C.ink, C.plum, C.plum, TX / TP - 1, 9);
-  outlinedText(tag, 'ANRLLDEV', TX / TP + 3, 12, { fill: C.yellow, outline: C.ink });
+  frame(tag, nameW + 8, 13, C.ink, C.plum, C.plum, TX / TP - 1, 16);
+  outlinedText(tag, 'ANRLLDEV', TX / TP + 3, 19, { fill: C.yellow, outline: C.ink });
 
   const T = 16, CPS = 0.055;
   let t = 0.6, css = '', defs = '', text = '', covers = '';
@@ -190,7 +190,7 @@ function about() {
     kf += `100%{transform:translateX(${wpx}px)}`;
     t += line.length * CPS + 0.25;
     defs += `<clipPath id="l${i}"><rect x="${TX}" y="${y - 3}" width="${wpx + 18}" height="${LH}"/></clipPath>`;
-    covers += `<g clip-path="url(#l${i})"><g class="cover ty${i}"><rect x="${TX}" y="${y - 3}" width="${wpx + 18}" height="${LH}" fill="${C.night}"/><rect class="cu${i}" x="${TX + 2}" y="${y}" width="12" height="21" fill="${C.yellow}"/></g></g>`;
+    covers += `<g clip-path="url(#l${i})"><g class="cover ty${i}"><rect x="${TX}" y="${y - 3}" width="${wpx + 18}" height="${LH}" fill="${C.night}"/><rect class="cu${i}" x="${TX + 2}" y="${y}" width="8" height="14" fill="${C.yellow}"/></g></g>`;
     css += `.ty${i}{animation:ty${i} ${T}s steps(1,end) infinite}@keyframes ty${i}{${kf}}
 .cu${i}{animation:cu${i} ${T}s steps(1,end) infinite}@keyframes cu${i}{0%{opacity:0}${pct(s)}{opacity:1}${pct(e)}{opacity:0}100%{opacity:0}}`;
   });
@@ -309,6 +309,7 @@ function map({ withWalker }) {
 
   // Landmarks with a wooden sign each.
   const lm = new Layer(P), signs = new Layer(P);
+  let signText = '';
   for (const d of Object.values(LANDMARKS)) {
     const w = d.rows[0].length, h = d.rows.length;
     for (let i = 1; i < w - 1; i++) lm.set(d.x + i, d.y + h, '#00543a');
@@ -316,13 +317,13 @@ function map({ withWalker }) {
     outlineShape(one);
     for (const [k, c] of one.m) { const [x, y] = k.split(',').map(Number); lm.set(x, y, c); }
     mark(d.x, d.y, w, h + 1, 2);
-    const cx = d.x + Math.floor(w / 2), tw = textWidth(d.label), bw = tw + 6;
-    const sx = cx - Math.floor(bw / 2);
-    frame(signs, bw, 11, C.ink, C.orange, C.brown, sx, d.ly);
-    signs.text(d.label, sx + 3, d.ly + 2, { color: C.cream });
-    const postY = d.ly < d.y ? d.ly + 11 : d.ly - 2;
-    for (const px of [sx + 3, sx + bw - 4]) signs.rect(px, postY, 1, 2, C.dirt);
-    mark(sx, d.ly, bw, 13, 2);
+    const cx = d.x + Math.floor(w / 2), tw2 = textWidth(d.label) * 2, bw = Math.ceil((tw2 + 20) / P);
+    const sx = cx - Math.floor(bw / 2), sy = d.ly < d.y ? d.ly + 4 : d.ly;
+    frame(signs, bw, 8, C.ink, C.orange, C.brown, sx, sy);
+    signText += new Layer(2, sx * P + Math.round((bw * P - tw2) / 2), sy * P + 9).text(d.label, 0, 0, { color: C.cream });
+    const postY = d.ly < d.y ? sy + 8 : sy - 2;
+    for (const px of [sx + 2, sx + bw - 3]) signs.rect(px, postY, 1, 2, C.dirt);
+    mark(sx, sy, bw, 10, 2);
   }
 
   // Forests: overlapping trees packed in rows, plus a few loose ones.
@@ -352,7 +353,7 @@ function map({ withWalker }) {
   const cloudShade = new Layer(P);
   for (let y = 0; y < 14; y++) for (let x = 0; x < 46; x++) if (((x - 23) / 23) ** 2 + ((y - 7) / 7) ** 2 <= 1 && (x + y) % 2 === 0) cloudShade.set(x, y, C.ink);
 
-  let body = base + g('tw0', sparkA) + g('tw1', sparkB) + mtn + road + trees + lm + g('blink', beacon) + g('lamp', glow) + puffs + g('tw2', fireflies) + signs;
+  let body = base + g('tw0', sparkA) + g('tw1', sparkB) + mtn + road + trees + lm + g('blink', beacon) + g('lamp', glow) + puffs + g('tw2', fireflies) + signs + signText;
   body += at(0, 70, g('cs cs1', cloudShade)) + at(0, 230, g('cs cs2', cloudShade));
   let css = BASE_CSS + `.tw2{animation:tw 1.7s steps(1) -.4s infinite}
 .lamp{animation:lamp 1.4s steps(1) infinite}@keyframes lamp{50%{opacity:.35}}
@@ -395,7 +396,7 @@ function map({ withWalker }) {
 
 // ---------- section ribbons (text only) ----------
 function ribbon(file, text) {
-  const P = 3, tw = textWidth(text);
+  const P = 2, tw = textWidth(text);
   const BW = 7 + tw + 7;
   const L = new Layer(P);
   const tailC = '#5e1c40', shade = '#3b0f28';
@@ -414,7 +415,7 @@ function ribbon(file, text) {
 
 // ---------- pixel buttons (wrapped in real links in the README) ----------
 function button(file, label, w) {
-  const P = 3, CW = Math.round(w / P), CH = 22;
+  const P = 2, CW = Math.round(w / P), CH = 22;
   const L = new Layer(P);
   for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
     const ex = Math.min(x, CW - 1 - x), ey = Math.min(y, CH - 1 - y);
@@ -435,24 +436,60 @@ const QUESTS = [
   ['fileflow', 'FileFlow', 'Desktop app that automates file chores.', 'Tauri'],
   ['akari', 'AKARI', 'Website for a Japanese culture club, with a meetings and attendance area.', 'Next.js, Supabase'],
 ];
+// Each card gets its own time of day so the four read as different places.
+const SCENES = {
+  tendril: { sky: [C.blue, '#6cc4ff', '#a8dcff'], ground: [C.green, C.moss], accent: C.green },
+  dblab: { sky: [C.ink, C.night, C.dusk], ground: [C.haze, C.navy], accent: C.blue },
+  fileflow: { sky: [C.plum, C.red, C.orange, C.yellow], ground: [C.brown, C.dirt], accent: C.orange },
+  akari: { sky: [C.ink, '#2b0f2a', C.plum], ground: [C.moss, '#00543a'], accent: C.pink },
+};
 function questCard([key, name, desc, tags], i) {
-  const P = 4, CW = 200, W = CW * P, SP = 6;
+  const P = 4, CW = 200, W = CW * P, SP = 6, TP = 2;
   const left = i % 2 === 0;
-  const textW = W - (42 + 18) * P - 28;
-  const CH = Math.max(44, Math.ceil((84 + wrap(desc, Math.floor(textW / 3)).length * 26 + 6 + 21 + 24) / P)), H = CH * P;
+  const sc = SCENES[key];
+  const bw = 46, bh = 34;
+  const tx = left ? (6 + bw + 6) * P : 28, maxW = W - (bw + 18) * P - 28;
+  const lines = wrap(desc, Math.floor(maxW / TP));
+  const blockH = 28 + 18 + lines.length * 20 + 8 + 14;
+  const CH = Math.max(46, Math.ceil((blockH + 64) / P)), H = CH * P;
   const rnd = rng(30 + i);
   const L = new Layer(P);
   panel(L, CW, CH, 0, 0, { flat: true });
-  const bx = left ? 6 : CW - 48, bw = 42, bh = 32, by = Math.round((CH - bh) / 2);
+  const bx = left ? 6 : CW - 6 - bw, by = Math.round((CH - bh) / 2);
   const box = new Layer(P);
   frame(box, bw, bh, C.cream, C.ink, C.dusk, bx, by);
-  for (let y = by + 24; y < by + bh - 2; y++) for (let x = bx + 2; x < bx + bw - 2; x++) box.set(x, y, y === by + 24 ? C.green : (rnd() < 0.12 ? C.green : C.moss));
-  const stars = new Layer(P);
-  for (let n = 0; n < 7; n++) stars.set(bx + 3 + Math.floor(rnd() * (bw - 6)), by + 3 + Math.floor(rnd() * 14), n % 3 ? C.cream : C.yellow);
+  const horizon = by + 25;
+  for (let y = by + 2; y < horizon; y++) {
+    const f = (y - by - 2) / (horizon - by - 2), band = Math.min(sc.sky.length - 1, Math.floor(f * sc.sky.length));
+    for (let x = bx + 2; x < bx + bw - 2; x++) {
+      const next = sc.sky[Math.min(sc.sky.length - 1, band + 1)];
+      const edge = (f * sc.sky.length) % 1 > 0.8 && (x + y) % 2 === 0;
+      box.set(x, y, edge ? next : sc.sky[band]);
+    }
+  }
+  for (let y = horizon; y < by + bh - 2; y++) for (let x = bx + 2; x < bx + bw - 2; x++) box.set(x, y, y === horizon ? sc.ground[0] : (rnd() < 0.15 ? sc.ground[0] : sc.ground[1]));
+
+  const deco = new Layer(P), decoB = new Layer(P);
+  if (key === 'tendril') {
+    for (let k = -2; k <= 2; k++) for (let j = -2; j <= 2; j++) if (k * k + j * j <= 5) deco.set(bx + bw - 8 + k, by + 6 + j, C.yellow);
+    for (const [cx, cy] of [[bx + 8, by + 7], [bx + 22, by + 12]]) deco.rect(cx, cy, 6, 2, C.cream).rect(cx + 1, cy - 1, 3, 1, C.cream);
+  } else if (key === 'dblab') {
+    for (let n = 0; n < 9; n++) (n % 2 ? deco : decoB).set(bx + 3 + Math.floor(rnd() * (bw - 6)), by + 3 + Math.floor(rnd() * 16), n % 3 ? C.cream : C.yellow);
+    deco.rect(bx + bw - 9, by + 4, 3, 3, C.cream).set(bx + bw - 8, by + 4, C.dusk);
+  } else if (key === 'fileflow') {
+    for (let k = -5; k <= 5; k++) for (let j = -5; j <= 0; j++) if (k * k + j * j <= 25) deco.set(bx + bw / 2 + k, horizon - 1 + j, C.yellow);
+    for (let x = bx + 4; x < bx + bw - 4; x += 7) decoB.rect(x, by + 6 + (x % 3), 4, 1, C.pink);
+  } else {
+    for (let x = bx + 3; x < bx + bw - 3; x++) deco.set(x, by + 4 + Math.round(Math.sin((x - bx) / 5) * 1.5), C.stone);
+    for (let x = bx + 5, n = 0; x < bx + bw - 4; x += 6, n++) {
+      const yy = by + 6 + Math.round(Math.sin((x - bx) / 5) * 1.5);
+      (n % 2 ? deco : decoB).rect(x, yy, 2, 2, C.red).set(x, yy, C.yellow);
+    }
+  }
 
   const d = LANDMARKS[key];
   const sw = d.rows[0].length * SP, sh = d.rows.length * SP;
-  const sx = bx * P + Math.round((bw * P - sw) / 2), sy = (by + 25) * P - sh;
+  const sx = bx * P + Math.round((bw * P - sw) / 2), sy = (horizon + 1) * P - sh;
   const sprite = new Layer(SP, sx, sy).sprite(d.rows, 0, 0, d.pal);
   let extra = '';
   if (key === 'tendril') extra = g('tw0', new Layer(SP, sx, sy).set(1, 2, C.yellow).set(14, 5, C.cream)) + g('tw1', new Layer(SP, sx, sy).set(13, 1, C.yellow).set(2, 12, C.cream));
@@ -460,19 +497,20 @@ function questCard([key, name, desc, tags], i) {
   if (key === 'akari') extra = g('lamp', new Layer(SP, sx, sy).rect(7, 6, 2, 2, C.yellow));
   if (key === 'fileflow') for (let k = 0; k < 3; k++) extra += g(`puff p${k}`, new Layer(SP, sx, sy).rect(11, -1, 2, 1, C.silver));
 
-  const tx = left ? (bx + bw + 6) * P : 28, maxW = W - (bw + 18) * P - 28;
-  const T = new Layer(3);
-  outlinedText(T, name, Math.round(tx / 3), 9, { scale: 2, fill: cy => (cy < 7 ? C.yellow : C.orange), outline: C.ink, shadow: C.plum });
-  const lines = wrap(desc, Math.floor(maxW / 3));
-  let y = 84;
-  const descL = lines.map((line, k) => new Layer(3, tx, y + k * 26).text(line, 0, 0, { color: C.cream })).join('');
-  y += lines.length * 26 + 6;
-  const tagL = new Layer(3, tx, y).text(tags, 0, 0, { color: C.lavender });
+  let y = Math.round((H - blockH) / 2);
+  const T = new Layer(TP);
+  outlinedText(T, name, Math.round(tx / TP), Math.round(y / TP), { scale: 2, fill: sc.accent, outline: C.ink, shadow: C.ink });
+  y += 28 + 18;
+  const descL = lines.map((line, k) => new Layer(TP, tx, y + k * 20).text(line, 0, 0, { color: C.cream })).join('');
+  y += lines.length * 20 + 8;
+  const tagL = new Layer(TP, tx, y).text(tags, 0, 0, { color: C.lavender });
 
   const css = BASE_CSS + `.lamp{animation:lamp 1.4s steps(1) infinite}@keyframes lamp{50%{opacity:.3}}
 .puff{animation:puff 3s infinite;opacity:0}.p1{animation-delay:-1s}.p2{animation-delay:-2s}
-@keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}100%{opacity:0;transform:translate(10px,-30px)}}` + REDUCED('.puff{display:none}');
-  writeSvg(out(`assets/quest-${key}.svg`), W, H, `${name}: ${desc} ${tags}.`, css, L + box + g('tw0', stars) + sprite + extra + T + descL + tagL);
+@keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}100%{opacity:0;transform:translate(10px,-30px)}}
+.drift{animation:drift 14s linear infinite}@keyframes drift{0%{transform:translateX(-16px)}50%{transform:translateX(16px)}100%{transform:translateX(-16px)}}` + REDUCED('.puff{display:none}');
+  const decoSvg = key === 'tendril' || key === 'fileflow' ? g('drift', decoB) + deco : g('tw0', deco) + g('tw1', decoB);
+  writeSvg(out(`assets/quest-${key}.svg`), W, H, `${name}: ${desc} ${tags}.`, css, L + box + decoSvg + sprite + extra + T + descL + tagL);
 }
 
 // ---------- footer: the mascot sleeps by a campfire ----------
@@ -495,8 +533,8 @@ function footer() {
   }
   for (let x = 0; x < CW; x++) if (rnd() < 0.12) L.set(x, GROUND - 1, C.green);
   const THANKS = 'THANKS FOR VISITING';
-  const title = new Layer(P);
-  outlinedText(title, THANKS, Math.round((CW - textWidth(THANKS)) / 2), 5, { fill: cy => (cy < 4 ? C.cream : C.silver), outline: C.ink, shadow: C.plum });
+  const title = new Layer(3);
+  outlinedText(title, THANKS, Math.round((W / 3 - textWidth(THANKS)) / 2), 9, { fill: cy => (cy < 4 ? C.cream : C.silver), outline: C.ink, shadow: C.plum });
   const mascot = new Layer(P).sprite(MASCOT_SLEEP, 86, GROUND - 11, MASCOT_PAL);
   const log = new Layer(P).rect(83, GROUND - 1, 16, 1, C.brown).rect(84, GROUND - 2, 14, 1, C.dirt);
 
@@ -510,7 +548,7 @@ function footer() {
   const fire = g('fa', new Layer(P).sprite(FIRE[0], 100, GROUND - 8, firePal)) + g('fb', new Layer(P).sprite(FIRE[1], 100, GROUND - 8, firePal));
 
   let zs = '', flies = '';
-  for (let k = 0; k < 3; k++) zs += g(`z z${k}`, new Layer(3, 96 * P, (GROUND - 15) * P).text('z', 0, 0, { color: C.cream }));
+  for (let k = 0; k < 3; k++) zs += g(`z z${k}`, new Layer(2, 96 * P, (GROUND - 15) * P).text('z', 0, 0, { color: C.cream }));
   [[30, 22], [58, 26], [140, 24], [168, 20], [120, 27]].forEach(([x, y], k) => {
     flies += g(`fly fl${k}`, new Layer(P).set(x, y, C.yellow), ` style="animation-delay:-${k * 0.9}s"`);
   });
@@ -529,7 +567,7 @@ function snakePlaceholder() {
   const L = new Layer(P);
   panel(L, CW, CH);
   const msg = 'The snake shows up after the first workflow run.';
-  const T = new Layer(3, Math.round((CW * P - textWidth(msg) * 3) / 2), 70).text(msg, 0, 0, { color: C.cream });
+  const T = new Layer(2, Math.round((CW * P - textWidth(msg) * 2) / 2), 74).text(msg, 0, 0, { color: C.cream });
   writeSvg(file, CW * P, CH * P, msg, '', L.toString() + T);
 }
 

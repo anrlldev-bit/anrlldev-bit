@@ -52,7 +52,7 @@ async function collect() {
 }
 
 function draw(d) {
-  const P = 4, TP = 3, CW = 200, W = CW * P;
+  const P = 4, TP = 2, CW = 200, W = CW * P;
   const langH = d.languages.length ? d.languages.length * 30 : 54;
   const CH = Math.ceil((270 + langH + 84) / P);
   const L = new Layer(P), T = [];
@@ -63,9 +63,9 @@ function draw(d) {
   cells.forEach(([value, label], i) => {
     const x = i % 2 ? 102 : 8, y = i < 2 ? 8 : 32;
     frame(L, 90, 22, C.haze, C.navy, C.navy, x, y);
-    text(label, x * P + 16, y * P + 12, C.lavender);
+    text(label, x * P + 18, y * P + 16, C.lavender);
     const V = new Layer(TP);
-    outlinedText(V, String(value), Math.round((x * P + 16) / TP), Math.round((y * P + 38) / TP), { scale: 2, fill: cy => (cy < 7 ? C.yellow : C.orange), outline: C.ink, shadow: C.plum });
+    outlinedText(V, String(value), Math.round((x * P + 18) / TP), Math.round((y * P + 40) / TP), { scale: 2, fill: cy => (cy < 7 ? C.yellow : C.orange), outline: C.ink, shadow: C.plum });
     T.push(V);
   });
 
