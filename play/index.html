@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>anrlldev world map</title>
+<meta name="description" content="Walk around a small pixel map and visit anrlldev's projects.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0b0a1a; --night: #13112e; --haze: #2a2163;
+    --cream: #fff1e8; --yellow: #ffec27; --moss: #008751;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--ink); color: var(--cream);
+    font-family: 'Pixelify Sans', ui-monospace, monospace; font-size: 18px; line-height: 1.5;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 32px; font-weight: 600; color: var(--yellow); margin: 0 0 4px; }
+  p { margin: 0 0 12px; }
+  a { color: var(--yellow); }
+  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+
+  .stage { position: relative; width: 100%; aspect-ratio: 800 / 400; margin: 16px 0; }
+  .stage > img.map { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+  .hero { position: absolute; width: 5%; image-rendering: pixelated; pointer-events: none; }
+
+  .panel {
+    min-height: 132px; background: var(--night); border: 4px solid var(--cream);
+    padding: 14px 18px; margin-bottom: 16px;
+  }
+  .panel h2 { margin: 0 0 4px; font-size: 22px; color: var(--yellow); font-weight: 600; }
+  .panel .hint { color: #c2c3c7; }
+  .panel a[hidden] { display: none; }
+  .panel a { display: inline-block; margin-top: 6px; padding: 10px 14px; min-height: 44px;
+    background: var(--yellow); color: var(--ink); text-decoration: none; font-weight: 600; }
+
+  .pad { display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 56px);
+    gap: 6px; justify-content: center; margin: 0 auto 24px; }
+  .pad button { font: inherit; font-size: 22px; background: var(--haze); color: var(--cream);
+    border: 3px solid var(--cream); cursor: pointer; touch-action: none; user-select: none; }
+  .pad button:active { background: var(--moss); }
+  .pad .up { grid-column: 2; } .pad .left { grid-column: 1; grid-row: 2; }
+  .pad .down { grid-column: 2; grid-row: 2; } .pad .right { grid-column: 3; grid-row: 2; }
+
+  .places { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .places li { background: var(--night); padding: 10px 14px; }
+  .places b { color: var(--yellow); font-weight: 600; }
+  h3 { font-size: 20px; margin: 28px 0 10px; font-weight: 600; }
+  footer { margin-top: 32px; color: #c2c3c7; }
+</style>
+</head>
+<body>
+<main>
+  <h1>anrlldev world map</h1>
+  <p>Walk with the arrow keys or WASD (or the buttons below on a phone). Stand next to a place to read about it.</p>
+
+  <div class="stage" id="stage">
+    <img class="map" src="map.svg" alt="Pixel island map with four places: Tendril grove, DBLab tower, FileFlow workshop and AKARI shrine.">
+    <img class="hero" id="hero" src="mascot-a.svg" alt="">
+  </div>
+
+  <section class="panel" id="panel" aria-live="polite">
+    <h2 id="p-title">Nobody here yet</h2>
+    <p id="p-body" class="hint">Walk to one of the four places on the map.</p>
+    <a id="p-link" href="#" hidden>Open site</a>
+  </section>
+
+  <div class="pad" aria-label="Movement buttons">
+    <button class="up" data-dir="up" aria-label="Walk up">▲</button>
+    <button class="left" data-dir="left" aria-label="Walk left">◀</button>
+    <button class="down" data-dir="down" aria-label="Walk down">▼</button>
+    <button class="right" data-dir="right" aria-label="Walk right">▶</button>
+  </div>
+
+  <h3>All places</h3>
+  <ul class="places" id="places"></ul>
+
+  <footer><a href="https://github.com/anrlldev-bit">Back to the GitHub profile</a></footer>
+</main>
+
+<script>
+  // Map is 200 x 100 cells; positions are the mascot's feet.
+  const PLACES = [
+    { name: 'Tendril', x: 46, y: 40, url: 'https://tendrilapp.vercel.app',
+      text: 'An Android chat app that works over Bluetooth, no internet needed. Kotlin and Jetpack Compose.' },
+    { name: 'DBLab', x: 146, y: 40, url: 'https://dblabapp.vercel.app',
+      text: 'SQL lessons in Indonesian. Queries run right in the browser with sql.js. Built with Next.js.' },
+    { name: 'FileFlow', x: 38, y: 61, url: 'https://fileflowpc.vercel.app',
+      text: 'A desktop app that automates file chores. Built with Tauri.' },
+    { name: 'AKARI', x: 164, y: 61, url: 'https://akarijapaneseclub.vercel.app',
+      text: 'Website for a Japanese culture club, with a meetings and attendance area. Next.js and Supabase.' },
+  ];
+  const NEAR = 12, SPEED = 22, MIN = { x: 10, y: 18 }, MAX = { x: 190, y: 92 };
+
+  const stage = document.getElementById('stage');
+  const hero = document.getElementById('hero');
+  const title = document.getElementById('p-title');
+  const body = document.getElementById('p-body');
+  const link = document.getElementById('p-link');
+  const pos = { x: 100, y: 52 };
+  const held = new Set();
+  let current = null, last = performance.now(), walkClock = 0;
+
+  document.getElementById('places').innerHTML = PLACES.map(p =>
+    `<li><b>${p.name}</b>: ${p.text} <a href="${p.url}">Open ${p.name}</a></li>`).join('');
+
+  const KEYS = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
+  addEventListener('keydown', e => {
+    if (KEYS[e.code]) { held.add(KEYS[e.code]); e.preventDefault(); }
+    if (e.code === 'Enter' && current && document.activeElement === document.body) location.href = current.url;
+  });
+  addEventListener('keyup', e => { if (KEYS[e.code]) held.delete(KEYS[e.code]); });
+  addEventListener('blur', () => held.clear());
+
+  document.querySelectorAll('.pad button').forEach(btn => {
+    const dir = btn.dataset.dir;
+    btn.addEventListener('pointerdown', e => { held.add(dir); try { btn.setPointerCapture(e.pointerId); } catch {} });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => btn.addEventListener(ev, () => held.delete(dir)));
+    btn.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'Enter') { held.add(dir); e.preventDefault(); } });
+    btn.addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'Enter') held.delete(dir); });
+  });
+
+  function show(place) {
+    if (place === current) return;
+    current = place;
+    if (place) {
+      title.textContent = place.name;
+      body.textContent = place.text;
+      body.classList.remove('hint');
+      link.href = place.url;
+      link.textContent = `Open ${place.name}`;
+      link.hidden = false;
+    } else {
+      title.textContent = 'Nobody here yet';
+      body.textContent = 'Walk to one of the four places on the map.';
+      body.classList.add('hint');
+      link.hidden = true;
+    }
+  }
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    let dx = 0, dy = 0;
+    if (held.has('left')) dx--; if (held.has('right')) dx++;
+    if (held.has('up')) dy--; if (held.has('down')) dy++;
+    if (dx || dy) {
+      const len = Math.hypot(dx, dy);
+      pos.x = Math.min(MAX.x, Math.max(MIN.x, pos.x + (dx / len) * SPEED * dt));
+      pos.y = Math.min(MAX.y, Math.max(MIN.y, pos.y + (dy / len) * SPEED * dt));
+      walkClock += dt;
+      hero.src = Math.floor(walkClock * 4) % 2 ? 'mascot-b.svg' : 'mascot-a.svg';
+    }
+    const cell = stage.clientWidth / 200;
+    hero.style.left = `${Math.round(pos.x - 5) * cell}px`;
+    hero.style.top = `${Math.round(pos.y - 12) * cell}px`;
+    show(PLACES.find(p => Math.hypot(p.x - pos.x, p.y - pos.y) < NEAR) || null);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>
