@@ -1,6 +1,6 @@
 // Generates the animated SVGs in ../assets and the map/mascot used by ../play.
 // Run: node scripts/generate.mjs   (stats.svg comes from the workflow)
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { charLayer, blinkLayer, landmark, drawLandmark, treeCells, ART_CSS } from './art.mjs';
@@ -156,7 +156,7 @@ function wrap(text, maxCells) {
 
 function about() {
   const P = 4, TP = 2, CW = 200, W = CW * P;
-  const TEXT = "Halo! I'm anrlldev. Right now I'm building a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club. Every quest card below opens the real site, and the stats further down refresh every day.";
+  const TEXT = "Halo! I'm anrlldev. Right now I'm building a study-program recommender, a college planner, a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club. Every quest card below opens the real site, and the stats further down refresh every day.";
   const TX = 184, TY = 76, LH = 24;
   const LINES = wrap(TEXT, Math.floor((W - TX - 32) / TP));
   const CH = Math.max(52, Math.ceil((TY + LINES.length * LH + 20) / P));
@@ -201,20 +201,87 @@ function about() {
 }
 
 // ---------- world map: island overworld, one landmark per project ----------
+// Lake in the middle, a ring road around it, the six places along the outside of the ring.
+const RING = { x: 100, y: 50, rx: 58, ry: 20 };
+const LAKE = { x: 100, y: 50, rx: 28, ry: 9 };
+const ringPoint = t => [RING.x + RING.rx * Math.cos(t), RING.y + RING.ry * Math.sin(t)];
+const ringYAt = (x, top) => RING.y + (top ? -1 : 1) * RING.ry * Math.sqrt(Math.max(0, 1 - ((x - RING.x) / RING.rx) ** 2));
+
+// side: where the landmark sits relative to the ring; sign: where its board goes.
 const LANDMARKS = {
-  tendril: { cx: 32, row: 'top', label: 'TENDRIL' },
-  dblab: { cx: 160, row: 'top', label: 'DBLAB' },
-  fileflow: { cx: 38, row: 'bottom', label: 'FILEFLOW' },
-  akari: { cx: 164, row: 'bottom', label: 'AKARI' },
+  tendril: { cx: 62, side: 'top', sign: 'left', label: 'TENDRIL' },
+  dblab: { cx: 138, side: 'top', sign: 'right', label: 'DBLAB' },
+  kompas: { side: 'left', sign: 'below', label: 'KOMPAS' },
+  ivory: { side: 'right', sign: 'below', label: 'IVORY' },
+  fileflow: { cx: 62, side: 'bottom', sign: 'left', label: 'FILEFLOW' },
+  akari: { cx: 138, side: 'bottom', sign: 'right', label: 'AKARI' },
 };
 // Bounding box of each landmark on the map grid (cells).
 const placeOf = key => {
   const d = LANDMARKS[key], lm = landmark(key);
-  const x = d.cx - Math.floor(lm.w / 2), y = d.row === 'top' ? 36 - lm.h : 63;
+  if (d.side === 'left') return { x: RING.x - RING.rx - 3 - lm.w, y: RING.y + 12 - lm.h, w: lm.w, h: lm.h };
+  if (d.side === 'right') return { x: RING.x + RING.rx + 4, y: RING.y + 12 - lm.h, w: lm.w, h: lm.h };
+  const x = d.cx - Math.floor(lm.w / 2);
+  const y = d.side === 'top' ? Math.floor(ringYAt(d.cx, true)) - 3 - lm.h : Math.ceil(ringYAt(d.cx, false)) + 3;
   return { x, y, w: lm.w, h: lm.h };
 };
-// Feet positions where the mascot stops for each landmark (also used by play/).
-export const STOPS = { tendril: [46, 40], dblab: [146, 40], akari: [164, 61], fileflow: [38, 61] };
+// Where on the ring each place is visited: the ring point closest to the landmark.
+const STOP_T = {};
+export const STOPS = {};
+for (const key of Object.keys(LANDMARKS)) {
+  const pl = placeOf(key), tx = pl.x + pl.w / 2, ty = pl.y + pl.h / 2;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < 360; i++) {
+    const t = (i / 360) * Math.PI * 2, [x, y] = ringPoint(t), dd = (x - tx) ** 2 + (y - ty) ** 2;
+    if (dd < bd) { bd = dd; best = t; }
+  }
+  STOP_T[key] = best;
+  const [x, y] = ringPoint(best);
+  STOPS[key] = [Math.round(x), Math.round(y) + 1];
+}
+
+// Park props, drawn as cell maps (outlined) so they can be placed as standalone objects.
+function propCells(rows, pal) {
+  const m = new Map();
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (pal[ch]) m.set(`${x},${y}`, pal[ch]); }));
+  const add = [];
+  for (const k of m.keys()) {
+    const [x, y] = k.split(',').map(Number);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!m.has(`${x + dx},${y + dy}`)) add.push(`${x + dx},${y + dy}`);
+  }
+  for (const k of add) m.set(k, C.ink);
+  return m;
+}
+// Benches face the lake: front view north of it, back view south of it, side views east and west.
+const BENCH_PAL = { w: '#d08a55', W: '#8a4a2a', k: '#3a3f5c' };
+const BENCH = {
+  front: propCells(['.wwwwwww.', '.WWWWWWW.', '.k.....k.', 'wwwwwwwww', 'WWWWWWWWW', '.k.....k.'], BENCH_PAL),
+  back: propCells(['.WWWWWWW.', 'wwwwwwwww', 'WWWWWWWWW', 'wwwwwwwww', 'WWWWWWWWW', '.k.....k.'], BENCH_PAL),
+  east: propCells(['w....', 'w....', 'W....', 'wwwww', 'WWWWW', 'k...k', 'k...k'], BENCH_PAL),
+  west: propCells(['....w', '....w', '....W', 'wwwww', 'WWWWW', 'k...k', 'k...k'], BENCH_PAL),
+};
+const LAMP = propCells(['.kkk.', 'kyYyk', 'kyyyk', '.kkk.', '..k..', '..k..', '..k..', '..k..', '..k..', '..k..', '..k..', '.kkk.'], { k: '#3a3f5c', y: C.yellow, Y: C.cream });
+const TREE_CELLS = treeCells(7);
+
+// Every object knows its box on the map grid and the row it stands on (base), so anything
+// whose base is lower on screen is drawn in front.
+function mapObjects() {
+  const objs = [];
+  const fromCells = (cells, x, y, kind, block) => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const k of cells.keys()) { const [a, b] = k.split(',').map(Number); minX = Math.min(minX, a); minY = Math.min(minY, b); maxX = Math.max(maxX, a); maxY = Math.max(maxY, b); }
+    const w = maxX - minX + 1, h = maxY - minY + 1;
+    objs.push({
+      kind, x, y, w, h, base: y + h, block,
+      draw: (px, ox, oy) => {
+        const L = new Layer(px, ox - minX * px, oy - minY * px);
+        for (const [k, c] of cells) { const [a, b] = k.split(',').map(Number); L.set(a, b, c); }
+        return L.toString();
+      },
+    });
+  };
+  return { objs, fromCells };
+}
 
 function map({ withWalker }) {
   const P = 4, CW = 200, CH = 100, W = CW * P, H = CH * P;
@@ -222,26 +289,25 @@ function map({ withWalker }) {
   const base = new Layer(P), sparkA = new Layer(P), sparkB = new Layer(P);
 
   const island = (x, y) => ((x - 100) / 96) ** 4 + ((y - 50) / 47) ** 4 - 0.05 * Math.sin(x * 0.31) - 0.05 * Math.cos(y * 0.45 + x * 0.07);
-  const LAKE = { x: 100, y: 75, rx: 21, ry: 7 };
   const lake = (x, y) => ((x - LAKE.x) / LAKE.rx) ** 2 + ((y - LAKE.y) / LAKE.ry) ** 2;
-  const riverX = y => 100 + Math.round(2 * Math.sin(y / 4));
-  const isRiver = (x, y) => y >= 33 && y < 70 && Math.abs(x - riverX(y)) <= 1;
+  const riverX = y => 100 + Math.round(1.5 * Math.sin(y / 3));
+  const isRiver = (x, y) => y >= 26 && y < 43 && Math.abs(x - riverX(y)) <= 1;
 
   for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
     const m = island(x, y);
     let c;
     if (m > 1) {
       c = m < 1.07 ? C.cream : m < 1.5 ? C.blue : C.navy;
-      if (m >= 1.07 && rnd() < 0.025) (rnd() < 0.5 ? sparkA : sparkB).set(x, y, C.cream);
-    } else if (m > 0.84) c = rnd() < 0.08 ? C.orange : C.peach;
+      if (m >= 1.07 && rnd() < 0.02) (rnd() < 0.5 ? sparkA : sparkB).set(x, y, C.cream);
+    } else if (m > 0.84) c = C.peach;
     else {
       const r = rnd();
       c = r < 0.05 ? C.green : r < 0.065 ? C.forest : C.moss;
       if (r > 0.995) c = [C.pink, C.yellow, C.cream][Math.floor(rnd() * 3)];
     }
     const lk = lake(x, y);
-    if (lk <= 1.25 && m <= 0.84) c = lk > 1 ? C.peach : lk > 0.8 ? C.cream : C.blue;
-    if (lk <= 0.8 && rnd() < 0.05) (rnd() < 0.5 ? sparkA : sparkB).set(x, y, C.cream);
+    if (lk <= 1.3 && m <= 0.84) c = lk > 1.08 ? C.peach : lk > 0.85 ? C.cream : lk > 0.6 ? C.blue : '#1f8fe0';
+    if (lk <= 0.8 && rnd() < 0.04) (rnd() < 0.5 ? sparkA : sparkB).set(x, y, C.cream);
     if (isRiver(x, y)) { c = C.blue; if (rnd() < 0.12) (rnd() < 0.5 ? sparkA : sparkB).set(x, y, C.cream); }
     base.set(x, y, c);
   }
@@ -249,101 +315,153 @@ function map({ withWalker }) {
 
   const taken = new Set();
   const mark = (x, y, w, h, pad = 1) => { for (let j = -pad; j < h + pad; j++) for (let i = -pad; i < w + pad; i++) taken.add(`${x + i},${y + j}`); };
-  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) if (island(x, y) > 0.8 || lake(x, y) <= 1.4 || isRiver(x, y)) taken.add(`${x},${y}`);
+  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) if (island(x, y) > 0.8 || lake(x, y) <= 1.6 || isRiver(x, y)) taken.add(`${x},${y}`);
 
-  // Mountains between the two top landmarks; the river starts below them.
+  // Flowers in a ring around the lake shore.
+  const flowers = new Layer(P);
+  const PETALS = [C.pink, C.yellow, C.cream, C.red, '#c08cff'];
+  for (let i = 0; i < 70; i++) {
+    const t = (i / 70) * Math.PI * 2 + rnd() * 0.05;
+    if (Math.abs(Math.cos(t)) < 0.12 && Math.sin(t) < 0) continue;
+    const r = 1.25 + rnd() * 0.18;
+    const fx = Math.round(LAKE.x + LAKE.rx * Math.sqrt(r) * Math.cos(t)), fy = Math.round(LAKE.y + LAKE.ry * Math.sqrt(r) * Math.sin(t));
+    if (isRiver(fx, fy)) continue;
+    const col = PETALS[Math.floor(rnd() * PETALS.length)];
+    flowers.set(fx, fy + 1, C.forest).set(fx, fy, col);
+    if (rnd() < 0.5) flowers.set(fx - 1, fy, col).set(fx + 1, fy, col).set(fx, fy - 1, col).set(fx, fy, C.yellow);
+  }
+
   const mtn = new Layer(P);
-  for (const [px, top, half] of [[84, 15, 9], [96, 11, 11], [110, 13, 10], [120, 18, 7]]) {
-    for (let y = top; y < 34; y++) {
+  for (const [px, top, half] of [[88, 14, 7], [100, 9, 9], [112, 13, 7]]) {
+    for (let y = top; y < 26; y++) {
       const w = Math.min(half, Math.round((y - top) * 0.9));
       for (let x = px - w; x <= px + w; x++) mtn.set(x, y, y - top < 3 ? C.cream : x <= px ? C.silver : C.stone);
     }
   }
   outlineShape(mtn);
-  mark(74, 9, 56, 27, 1);
+  mark(80, 8, 41, 19, 1);
 
-  // Roads (3 wide) with brown dotted edges, bridges where they cross the river.
-  const road = new Layer(P);
-  const roads = [[42, 37, 117, 3], [30, 58, 143, 3], [56, 37, 3, 24], [142, 37, 3, 24]];
-  for (const [x, y, w, h] of roads) {
-    road.rect(x, y, w, h, C.peach);
-    for (let i = 0; i < w; i++) { if (i % 2 === 0) { if (h === 3) { road.set(x + i, y, C.orange); road.set(x + i, y + 2, C.orange); } } }
-    mark(x, y, w, h, 2);
+  // Ring road: a 3-wide band stamped along the ellipse, with darker dotted edges.
+  const road = new Layer(P), roadCells = new Set();
+  for (let i = 0; i < 1400; i++) {
+    const [x, y] = ringPoint((i / 1400) * Math.PI * 2);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) roadCells.add(`${Math.round(x) + dx},${Math.round(y) + dy}`);
   }
-  for (const by of [37, 58]) {
-    const bx = riverX(by + 1);
-    road.rect(bx - 3, by - 1, 7, 5, C.brown);
-    for (let i = -3; i <= 3; i++) { road.set(bx + i, by - 1, C.ink); road.set(bx + i, by + 3, C.ink); }
-    for (let j = 0; j < 3; j++) road.set(bx - 2, by + j, C.dirt).set(bx + 2, by + j, C.dirt);
+  for (const k of roadCells) {
+    const [x, y] = k.split(',').map(Number);
+    const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !roadCells.has(`${x + dx},${y + dy}`));
+    road.set(x, y, edge && (x + y) % 2 === 0 ? C.orange : C.peach);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) taken.add(`${x + dx},${y + dy}`);
+  }
+  {
+    const by = Math.round(ringYAt(100, true));
+    road.rect(97, by - 2, 7, 5, C.brown);
+    for (let i = 97; i <= 103; i++) { road.set(i, by - 2, C.ink); road.set(i, by + 2, C.ink); }
+    for (let j = -1; j <= 1; j++) road.set(98, by + j, C.dirt).set(102, by + j, C.dirt);
   }
 
-  // Landmarks with a wooden sign each.
-  const signs = new Layer(P);
-  let signText = '', lmSvg = '';
+  const { objs, fromCells } = mapObjects();
   const shadows = new Layer(P);
+
+  // Landmarks and their wooden signs.
   for (const [key, d] of Object.entries(LANDMARKS)) {
     const pl = placeOf(key);
     for (let i = 2; i < pl.w - 2; i++) shadows.set(pl.x + i, pl.y + pl.h, '#00543a');
-    lmSvg += drawLandmark(key, P, pl.x * P, pl.y * P).svg;
+    objs.push({ kind: `lm-${key}`, x: pl.x, y: pl.y, w: pl.w, h: pl.h, base: pl.y + pl.h, block: [pl.x + 2, pl.y + pl.h - 4, pl.w - 4, 4], draw: (px, ox, oy) => drawLandmark(key, px, ox, oy).svg });
     mark(pl.x, pl.y, pl.w, pl.h + 1, 2);
-    const tw2 = textWidth(d.label) * 2, bw = Math.ceil((tw2 + 20) / P);
-    const sx = d.cx - Math.floor(bw / 2), sy = d.row === 'top' ? pl.y - 10 : pl.y + pl.h + 2;
-    frame(signs, bw, 8, C.ink, C.orange, C.brown, sx, sy);
-    signText += new Layer(2, sx * P + Math.round((bw * P - tw2) / 2), sy * P + 9).text(d.label, 0, 0, { color: C.cream });
-    const postY = d.row === 'top' ? sy + 8 : sy - 2;
-    for (const px of [sx + 2, sx + bw - 3]) signs.rect(px, postY, 1, 2, C.dirt);
-    mark(sx, sy, bw, 10, 2);
+    const tw = textWidth(d.label), bw = Math.ceil((tw * 2 + 20) / P);
+    let sx, sy;
+    if (d.sign === 'left') { sx = pl.x - bw - 2; sy = pl.y + pl.h - 12; }
+    else if (d.sign === 'right') { sx = pl.x + pl.w + 2; sy = pl.y + pl.h - 12; }
+    else { sx = pl.x + Math.floor((pl.w - bw) / 2); sy = pl.y + pl.h + 2; }
+    const below = d.sign === 'below';
+    objs.push({
+      kind: `sign-${key}`, x: sx, y: below ? sy - 2 : sy, w: bw, h: 10, base: below ? sy + 8 : sy + 10, block: null,
+      draw: (px, ox, oy) => {
+        const top = below ? 2 : 0;
+        const L = new Layer(px, ox, oy);
+        frame(L, bw, 8, C.ink, C.orange, C.brown, 0, top);
+        for (const p of [2, bw - 3]) L.rect(p, below ? 0 : 8, 1, 2, C.dirt);
+        const T = new Layer(px / 2, ox + Math.round((bw * px - tw * px / 2) / 2), oy + (top * px) + Math.round(px * 2.25)).text(d.label, 0, 0, { color: C.cream });
+        return L.toString() + T;
+      },
+    });
+    mark(sx, sy, bw, 11, 2);
   }
 
-  // Forests: overlapping trees packed in rows, plus a few loose ones.
-  const TREE = treeCells(7), TW = 10, TH = 12;
+  // Benches facing the lake, lamps along the inner edge of the ring.
+  for (const [t, view] of [[-2.3, 'front'], [Math.PI / 2, 'back']]) {
+    const side = view === 'east' || view === 'west', bw = side ? 5 : 9, bh = side ? 7 : 6;
+    const bx = Math.round(LAKE.x + (LAKE.rx + (side ? 6 : 7)) * Math.cos(t)) - Math.floor(bw / 2);
+    const by = Math.round(LAKE.y + (LAKE.ry + 5) * Math.sin(t)) - bh + 2;
+    fromCells(BENCH[view], bx, by, `bench-${view}`, [bx, by + bh - 2, bw, 2]);
+    mark(bx, by, bw, bh, 1);
+  }
+  for (let i = 0; i < 4; i++) {
+    const t = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const lx = Math.round(RING.x + (RING.rx - 5) * Math.cos(t)) - 2, ly = Math.round(RING.y + (RING.ry - 4) * Math.sin(t)) - 11;
+    fromCells(LAMP, lx, ly, 'lamp', [lx + 1, ly + 10, 3, 2]);
+    objs[objs.length - 1].glow = [lx + 2, ly + 1];
+    mark(lx, ly, 5, 12, 1);
+  }
+
+  // Trees fill the land that is left.
   const spots = [];
   const tryTree = (x, y) => {
-    for (let j = 0; j < TH; j++) for (let i = 0; i < TW; i++) if (taken.has(`${x + i},${y + j}`)) return;
+    for (let j = 0; j < 12; j++) for (let i = 0; i < 10; i++) if (taken.has(`${x + i},${y + j}`)) return;
     spots.push([x, y]);
+    for (let j = 2; j < 10; j++) for (let i = 2; i < 8; i++) taken.add(`${x + i},${y + j}`);
   };
-  for (const [x0, y0, x1, y1] of [[46, 14, 74, 34], [124, 10, 150, 34], [62, 63, 80, 92], [120, 63, 150, 92], [8, 40, 24, 58], [176, 40, 192, 58]]) {
-    for (let y = y0, row = 0; y <= y1 - TH; y += 5, row++)
-      for (let x = x0 + (row % 2) * 4; x <= x1 - TW; x += 7)
-        if (rnd() < 0.85) tryTree(x + Math.floor(rnd() * 2), y);
-  }
-  for (let n = 0; n < 90; n++) tryTree(4 + Math.floor(rnd() * 190), 4 + Math.floor(rnd() * 90));
-  spots.sort((a, b) => a[1] - b[1]);
-  const trees = new Layer(P);
-  for (const [x, y] of spots) for (const [k, c] of TREE) { const [a, b] = k.split(',').map(Number); trees.set(x + a + 1, y + b + 1, c); }
+  for (let n = 0; n < 1500; n++) tryTree(2 + Math.floor(rnd() * 192), 2 + Math.floor(rnd() * 92));
+  for (const [x, y] of spots) fromCells(TREE_CELLS, x, y, 'tree', [x + 3, y + 9, 4, 2]);
 
-  // Little animated details.
-  const fireflies = new Layer(P).set(20, 30, C.yellow).set(48, 12, C.yellow).set(130, 8, C.yellow);
+  objs.sort((a, b) => a.base - b.base);
+  const glowLayer = new Layer(P);
+  for (const o of objs) if (o.glow) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (dx * dx + dy * dy <= 5 && (dx + dy) % 2 === 0) glowLayer.set(o.glow[0] + dx, o.glow[1] + dy, C.yellow);
+
   const cloudShade = new Layer(P);
   for (let y = 0; y < 14; y++) for (let x = 0; x < 46; x++) if (((x - 23) / 23) ** 2 + ((y - 7) / 7) ** 2 <= 1 && (x + y) % 2 === 0) cloudShade.set(x, y, C.ink);
+  const ducks = new Layer(P).rect(86, 48, 3, 2, C.cream).set(88, 47, C.cream).set(89, 47, C.orange).rect(110, 51, 3, 2, C.cream).set(112, 50, C.cream).set(113, 50, C.orange);
 
-  let body = base + g('tw0', sparkA) + g('tw1', sparkB) + mtn + road + shadows + trees + lmSvg + g('tw2', fireflies) + signs + signText;
-  body += at(0, 70, g('cs cs1', cloudShade)) + at(0, 230, g('cs cs2', cloudShade));
-  let css = BASE_CSS + `.tw2{animation:tw 1.7s steps(1) -.4s infinite}
-.lamp{animation:lamp 1.4s steps(1) infinite}@keyframes lamp{50%{opacity:.35}}
-.puff{animation:puff 3s infinite;opacity:0}.p1{animation-delay:-1s}.p2{animation-delay:-2s}
-@keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}85%{opacity:.6}100%{opacity:0;transform:translate(8px,-28px)}}
+  const ground = base + g('tw0', sparkA) + g('tw1', sparkB) + road + flowers + g('swim', ducks) + shadows;
+  let css = BASE_CSS + `.swim{animation:swim 9s steps(9) infinite}@keyframes swim{50%{transform:translateX(16px)}}
+.lampglow{opacity:.35;animation:lampglow 2.4s steps(2) infinite}@keyframes lampglow{50%{opacity:.6}}
 .cs{opacity:.16;animation:cs 46s linear infinite}.cs2{animation-duration:63s;animation-delay:-30s}
 @keyframes cs{from{transform:translateX(-200px)}to{transform:translateX(${W + 20}px)}}` + ART_CSS;
+  const clouds = at(0, 70, g('cs cs1', cloudShade)) + at(0, 230, g('cs cs2', cloudShade));
 
   if (withWalker) {
-    const route = [
-      { xy: STOPS.tendril, stop: true }, { xy: STOPS.dblab, stop: true }, { xy: [143, 40] }, { xy: [143, 61] },
-      { xy: STOPS.akari, stop: true }, { xy: STOPS.fileflow, stop: true }, { xy: [57, 61] }, { xy: [57, 40] },
-      { xy: STOPS.tendril, stop: true },
-    ];
-    const SPEED = 0.09, PAUSE = 1.5;
-    let t = 0;
-    const frames = [{ t: 0, xy: route[0].xy, steps: 0 }];
-    if (route[0].stop) { t += PAUSE; frames.push({ t, xy: route[0].xy, steps: 0 }); }
-    for (let i = 1; i < route.length; i++) {
-      const [ax, ay] = route[i - 1].xy, [bx, by] = route[i].xy;
-      const dist = Math.abs(bx - ax) + Math.abs(by - ay);
-      t += dist * SPEED;
-      frames.push({ t, xy: route[i].xy, steps: dist });
-      if (route[i].stop && i < route.length - 1) { t += PAUSE; frames.push({ t, xy: route[i].xy, steps: 0 }); }
+    // The walkers only ever stand on the ring, so each object is either always behind them
+    // (its base is above the nearest stretch of road) or always in front.
+    const roadYNear = o => {
+      const cx = o.x + o.w / 2;
+      if (Math.abs(cx - RING.x) >= RING.rx) return RING.y;
+      const top = ringYAt(cx, true), bot = ringYAt(cx, false);
+      return Math.abs(o.base - top) < Math.abs(o.base - bot) ? top : bot;
+    };
+    const behind = objs.filter(o => o.base <= roadYNear(o) + 1), front = objs.filter(o => o.base > roadYNear(o) + 1);
+    const drawAll = list => list.map(o => o.draw(P, o.x * P, o.y * P)).join('');
+
+    const order = Object.keys(LANDMARKS).sort((a, b) => ((STOP_T[a] + Math.PI / 2) % (Math.PI * 2)) - ((STOP_T[b] + Math.PI / 2) % (Math.PI * 2)));
+    const N = 96, PAUSE = 1.5, SPEED = 0.09, t0 = STOP_T[order[0]];
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+      const t = t0 + (i / N) * Math.PI * 2;
+      const [x, y] = ringPoint(t);
+      const stopKey = order.find(k => Math.abs(((STOP_T[k] - t0 + Math.PI * 4) % (Math.PI * 2)) - (i / N) * Math.PI * 2) < Math.PI / N);
+      pts.push({ xy: stopKey ? STOPS[stopKey] : [Math.round(x), Math.round(y) + 1], stop: Boolean(stopKey) });
     }
-    const [sx, sy] = route[0].xy;
+    let t = 0;
+    const frames = [{ t: 0, xy: pts[0].xy, steps: 0 }];
+    t += PAUSE; frames.push({ t, xy: pts[0].xy, steps: 0 });
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, ay] = pts[i - 1].xy, [bx, by] = pts[i].xy;
+      const dist = Math.max(1, Math.abs(bx - ax) + Math.abs(by - ay));
+      t += dist * SPEED;
+      frames.push({ t, xy: pts[i].xy, steps: dist });
+      if (pts[i].stop && i < pts.length - 1) { t += PAUSE; frames.push({ t, xy: pts[i].xy, steps: 0 }); }
+    }
+    const [sx, sy] = pts[0].xy;
     let kf = '';
     frames.forEach((f, i) => {
       const next = frames[i + 1];
@@ -351,12 +469,29 @@ function map({ withWalker }) {
       kf += `${pct((f.t / t) * 100)}{transform:translate(${(f.xy[0] - sx) * P}px,${(f.xy[1] - sy) * P}px)${tf}}`;
     });
     css += `.route{animation:route ${t.toFixed(2)}s infinite}@keyframes route{${kf}}`;
-    body += at((sx - 4) * P, (sy - 10) * P, g('route', duo(2, -34)));
+    const walkers = at((sx - 4) * P, (sy - 10) * P, g('route', duo(2, -34)));
+    const body = ground + mtn + drawAll(behind) + walkers + drawAll(front) + g('lampglow', glowLayer) + clouds;
+    writeSvg(out('assets/map.svg'), W, H, MAP_LABEL, css + REDUCED('.puff{display:none}'), body);
+  } else {
+    // The game draws objects itself so the player can walk behind them.
+    writeSvg(out('play/map.svg'), W, H, MAP_LABEL, css, ground + g('lampglow', glowLayer));
+    const files = new Map();
+    const objects = objs.map(o => {
+      const name = o.kind === 'tree' || o.kind === 'bench' || o.kind === 'lamp' ? o.kind : o.kind;
+      if (!files.has(name)) {
+        files.set(name, true);
+        writeSvg(out(`play/obj/${name}.svg`), o.w * P, o.h * P, name, BASE_CSS + ART_CSS, o.draw(P, 0, 0));
+      }
+      return { src: `obj/${name}.svg`, x: o.x, y: o.y, w: o.w, h: o.h, z: o.base, block: o.block };
+    });
+    objects.push({ src: 'obj/mountains.svg', x: 79, y: 7, w: 43, h: 21, z: 26, block: [80, 14, 41, 12] });
+    const M = new Layer(P, -79 * P, -7 * P);
+    for (const [k, c] of mtn.m) { const [a, b] = k.split(',').map(Number); M.set(a, b, c); }
+    writeSvg(out('play/obj/mountains.svg'), 43 * P, 21 * P, 'mountains', '', M.toString());
+    writeFileSync(out('play/stops.js'), `// Generated by scripts/generate.mjs: stops, the lake, and every object with its depth (z) and blocking box.\nwindow.MAP = ${JSON.stringify({ stops: STOPS, lake: LAKE, objects })};\n`);
   }
-  css += REDUCED('.puff{display:none}');
-  const label = 'World map: an island with Tendril grove, DBLab tower, FileFlow workshop and AKARI shrine, joined by roads.';
-  writeSvg(out(withWalker ? 'assets/map.svg' : 'play/map.svg'), W, H, label, css, body);
 }
+const MAP_LABEL = 'World map: an island with a lake in the middle, flowers, benches and lamps around it, a ring road and six places along the road: Kompas, Ivory, Tendril, DBLab, FileFlow and AKARI.';
 
 // ---------- section ribbons (text only) ----------
 function ribbon(file, text) {
@@ -395,6 +530,8 @@ function button(file, label, w) {
 
 // ---------- quest cards: one per project, illustration alternates sides ----------
 const QUESTS = [
+  ['kompas', 'Kompas Program Studi', 'Study-program recommendations for students, based on grades, interests, talents and preferences.', 'NestJS, PostgreSQL'],
+  ['ivory', 'Ivory', 'Planner for college life: tasks, class schedule, grades and attendance. Works offline and syncs.', 'Node.js, Tauri, PWA'],
   ['tendril', 'Tendril', 'Android chat that works over Bluetooth, no internet needed.', 'Kotlin, Jetpack Compose'],
   ['dblab', 'DBLab', 'SQL lessons in Indonesian, with queries running right in the browser.', 'Next.js, sql.js'],
   ['fileflow', 'FileFlow', 'Desktop app that automates file chores.', 'Tauri'],
@@ -406,6 +543,8 @@ const SCENES = {
   dblab: { sky: [C.ink, C.night, C.dusk], ground: [C.haze, C.navy], accent: C.blue },
   fileflow: { sky: [C.plum, C.red, C.orange, C.yellow], ground: [C.brown, C.dirt], accent: C.orange },
   akari: { sky: [C.ink, '#2b0f2a', C.plum], ground: [C.moss, '#00543a'], accent: C.pink },
+  kompas: { sky: [C.navy, C.lavender, C.pink], ground: [C.green, C.moss], accent: C.yellow },
+  ivory: { sky: ['#8ea6c8', '#b9cbe3', '#dde7f3'], ground: ['#ffffff', '#d6e0ec'], accent: C.cream },
 };
 function questCard([key, name, desc, tags], i) {
   const P = 4, CW = 200, W = CW * P, SP = 6, TP = 2;
@@ -443,6 +582,11 @@ function questCard([key, name, desc, tags], i) {
   } else if (key === 'fileflow') {
     for (let k = -5; k <= 5; k++) for (let j = -5; j <= 0; j++) if (k * k + j * j <= 25) deco.set(bx + bw / 2 + k, horizon - 1 + j, C.yellow);
     for (let x = bx + 4; x < bx + bw - 4; x += 7) decoB.rect(x, by + 6 + (x % 3), 4, 1, C.pink);
+  } else if (key === 'kompas') {
+    for (const [cx, cy] of [[bx + 8, by + 6], [bx + 16, by + 9], [bx + 33, by + 5]]) decoB.set(cx, cy, C.ink).set(cx - 1, cy - 1, C.ink).set(cx + 1, cy - 1, C.ink);
+    for (let k = -2; k <= 2; k++) for (let j = -2; j <= 0; j++) if (k * k + j * j <= 5) deco.set(bx + bw - 7 + k, by + 22 + j, C.yellow);
+  } else if (key === 'ivory') {
+    for (let n = 0; n < 14; n++) (n % 2 ? deco : decoB).set(bx + 3 + Math.floor(rnd() * (bw - 6)), by + 3 + Math.floor(rnd() * 20), '#ffffff');
   } else {
     for (let x = bx + 3; x < bx + bw - 3; x++) deco.set(x, by + 4 + Math.round(Math.sin((x - bx) / 5) * 1.5), C.stone);
     for (let x = bx + 5, n = 0; x < bx + bw - 4; x += 6, n++) {
@@ -467,7 +611,7 @@ function questCard([key, name, desc, tags], i) {
 .puff{animation:puff 3s infinite;opacity:0}.p1{animation-delay:-1s}.p2{animation-delay:-2s}
 @keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}100%{opacity:0;transform:translate(10px,-30px)}}
 .drift{animation:drift 14s linear infinite}@keyframes drift{0%{transform:translateX(-16px)}50%{transform:translateX(16px)}100%{transform:translateX(-16px)}}` + REDUCED('.puff{display:none}');
-  const decoSvg = key === 'tendril' || key === 'fileflow' ? g('drift', decoB) + deco : g('tw0', deco) + g('tw1', decoB);
+  const decoSvg = key === 'tendril' || key === 'fileflow' || key === 'kompas' ? g('drift', decoB) + deco : g('tw0', deco) + g('tw1', decoB);
   writeSvg(out(`assets/quest-${key}.svg`), W, H, `${name}: ${desc} ${tags}.`, css, L + box + decoSvg + sprite + extra + T + descL + tagL);
 }
 

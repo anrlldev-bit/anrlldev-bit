@@ -166,6 +166,41 @@ const BUILDERS = {
   },
 };
 
+// Kompas Program Studi: a signpost whose boards use the app's criterion colours, compass on top.
+BUILDERS.kompas = () => {
+  const { m, set, rect } = canvas();
+  rect(9, 5, 2, 15, C.brown); rect(10, 5, 1, 15, C.dirt);
+  for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) if (x * x + y * y <= 10) set(10 + x, 1 + y, x * x + y * y > 6 ? C.silver : C.cream);
+  set(10, -1, C.red); set(10, 0, C.red); set(10, 2, C.stone); set(10, 3, C.stone); set(10, 1, INK);
+  const board = (x0, x1, y, color, shade, dir) => {
+    rect(x0, y, x1 - x0 + 1, 3, color); rect(x0, y + 2, x1 - x0 + 1, 1, shade);
+    const tip = dir > 0 ? x1 + 1 : x0 - 1;
+    set(tip, y, color); set(tip, y + 1, color); set(tip, y + 2, shade); set(tip + dir, y + 1, color);
+  };
+  board(11, 17, 6, C.yellow, C.orange, 1);
+  board(2, 8, 10, C.blue, '#1f6fbf', -1);
+  board(11, 16, 14, C.pink, '#c94a85', 1);
+  rect(6, 19, 8, 2, C.stone); rect(6, 19, 8, 1, C.silver);
+  outline(m);
+  return { m, anims: [{ cls: 'tw0', cells: [[10, -1, C.orange]] }] };
+};
+
+// Ivory: an ivory tower with a battlement, lit arched windows and a pennant.
+BUILDERS.ivory = () => {
+  const { m, set, rect } = canvas();
+  const wall = '#fff6e6', shade = '#e2d4bd', dark = '#c9b79a', roof = C.plum, roofHi = '#a8336f';
+  set(10, -4, INK); set(10, -3, INK); set(11, -4, C.yellow); set(12, -4, C.yellow); set(11, -3, C.orange);
+  for (let y = 0; y < 6; y++) for (let x = 10 - y - 1; x <= 10 + y; x++) set(x, y - 2, x < 10 ? roofHi : roof);
+  for (let x = 3; x <= 16; x++) set(x, 4, x % 2 ? wall : shade);
+  rect(3, 5, 14, 1, dark);
+  rect(4, 6, 12, 14, wall); rect(12, 6, 3, 14, shade); rect(15, 6, 1, 14, dark); rect(4, 6, 1, 14, shade);
+  for (const [wx, wy] of [[9, 8], [6, 12], [12, 12]]) { rect(wx, wy, 2, 3, C.yellow); set(wx, wy, '#3a2618'); set(wx + 1, wy, '#3a2618'); }
+  rect(9, 16, 2, 4, '#6b3d2a'); set(9, 16, '#3a2618'); set(10, 16, '#3a2618');
+  rect(2, 20, 16, 1, C.stone);
+  outline(m);
+  return { m, anims: [{ cls: 'blink', cells: [[9, 9, C.orange], [10, 9, C.orange]] }] };
+};
+
 export function landmark(key) {
   const art = BUILDERS[key]();
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;

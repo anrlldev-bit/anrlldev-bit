@@ -7,17 +7,23 @@
 </p>
 
 <p align="center">
-  <img src="assets/about.svg" width="100%" alt="Halo! I'm anrlldev. Right now I'm building a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club." />
+  <img src="assets/about.svg" width="100%" alt="Halo! I'm anrlldev. Right now I'm building a study-program recommender, a college planner, a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club." />
 </p>
 
 <img src="assets/title-map.svg" alt="World map" />
 
 <p align="center">
-  <img src="assets/map.svg" width="100%" alt="World map: an island with Tendril grove, DBLab tower, FileFlow workshop and AKARI shrine, joined by roads." />
+  <img src="assets/map.svg" width="100%" alt="World map: an island with six places (Kompas, Ivory, Tendril, DBLab, FileFlow, AKARI) joined by roads." />
 </p>
 
 <img src="assets/title-quests.svg" alt="Quest log" />
 
+<p align="center">
+  <a href="https://kompasprogramstudi.vercel.app"><img src="assets/quest-kompas.svg" width="100%" alt="Kompas Program Studi: study-program recommendations for students, based on grades, interests, talents and preferences. NestJS, PostgreSQL." /></a>
+</p>
+<p align="center">
+  <a href="https://ivoryapp.vercel.app"><img src="assets/quest-ivory.svg" width="100%" alt="Ivory: planner for college life with tasks, class schedule, grades and attendance. Works offline and syncs. Node.js, Tauri, PWA." /></a>
+</p>
 <p align="center">
   <a href="https://tendrilapp.vercel.app"><img src="assets/quest-tendril.svg" width="100%" alt="Tendril: Android chat that works over Bluetooth, no internet needed. Kotlin, Jetpack Compose." /></a>
 </p>

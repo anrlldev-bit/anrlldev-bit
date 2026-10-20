@@ -39,9 +39,11 @@
   kbd { font: inherit; padding: 0 5px; border: 2px solid var(--lavender); border-bottom-width: 4px; background: var(--dusk); }
 
   .stage { position: relative; aspect-ratio: 800 / 400; padding: 6px; }
-  .stage .map { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); image-rendering: pixelated; }
-  .hero { position: absolute; width: 4%; image-rendering: pixelated; pointer-events: none; transition: transform .08s; }
-  .ping { position: absolute; width: 10px; height: 10px; background: var(--yellow); box-shadow: 0 0 0 2px var(--ink); animation: ping 0.8s steps(2) infinite; pointer-events: none; }
+  .world { position: absolute; inset: 6px; overflow: hidden; }
+  .world > img { position: absolute; image-rendering: pixelated; pointer-events: none; }
+  .world .map { inset: 0; width: 100%; height: 100%; }
+  .world .hero { width: 4%; }
+  .ping { position: absolute; z-index: 9999; width: 10px; height: 10px; background: var(--yellow); box-shadow: 0 0 0 2px var(--ink); animation: ping 0.8s steps(2) infinite; pointer-events: none; }
   @keyframes ping { 50% { opacity: 0; } }
 
   .dialog { display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: center; margin-top: 18px; padding: 18px 22px; min-height: 150px; }
@@ -100,14 +102,16 @@
     <div class="title"><h1>anrlldev world map</h1></div>
     <div class="hud">
       <span class="chip keys"><kbd>WASD</kbd> or <kbd>arrows</kbd> to walk</span>
-      <span class="chip">Visited <b id="count">0</b>/4</span>
+      <span class="chip">Visited <b id="count">0</b>/6</span>
       <button class="chip btnlike" id="change" type="button">Change character</button>
     </div>
   </div>
 
   <div class="stage win" id="stage">
-    <img class="map" src="map.svg" alt="Pixel island with four places: Tendril grove, DBLab tower, FileFlow workshop and AKARI shrine.">
-    <img class="hero" id="hero" src="boy-a.svg" alt="">
+    <div class="world" id="world">
+      <img class="map" src="map.svg" alt="Pixel island with a lake, a ring road and six places: Kompas signpost, Ivory tower, Tendril tree, DBLab library, FileFlow workshop and AKARI shrine.">
+      <img class="hero" id="hero" src="boy-a.svg" alt="">
+    </div>
   </div>
 
   <section class="dialog win" aria-live="polite">
@@ -146,29 +150,36 @@
   <footer><a href="https://github.com/anrlldev-bit">Back to the GitHub profile</a></footer>
 </main>
 
+<script src="stops.js"></script>
 <script>
   // Map is 200 x 100 cells; positions are the mascot's feet.
   const PLACES = [
-    { key: 'tendril', name: 'Tendril', x: 46, y: 40, url: 'https://tendrilapp.vercel.app',
+    { key: 'kompas', name: 'Kompas Program Studi', x: MAP.stops.kompas[0], y: MAP.stops.kompas[1], url: 'https://kompasprogramstudi.vercel.app',
+      text: 'Study-program recommendations for students, based on grades, interests, talents and preferences. NestJS and PostgreSQL.' },
+    { key: 'ivory', name: 'Ivory', x: MAP.stops.ivory[0], y: MAP.stops.ivory[1], url: 'https://ivoryapp.vercel.app',
+      text: 'A planner for college life: tasks, class schedule, grades and attendance. Works offline and syncs. Node.js, Tauri and PWA.' },
+    { key: 'tendril', name: 'Tendril', x: MAP.stops.tendril[0], y: MAP.stops.tendril[1], url: 'https://tendrilapp.vercel.app',
       text: 'An Android chat app that works over Bluetooth, no internet needed. Built with Kotlin and Jetpack Compose.' },
-    { key: 'dblab', name: 'DBLab', x: 146, y: 40, url: 'https://dblabapp.vercel.app',
+    { key: 'dblab', name: 'DBLab', x: MAP.stops.dblab[0], y: MAP.stops.dblab[1], url: 'https://dblabapp.vercel.app',
       text: 'SQL lessons in Indonesian. Queries run right in the browser with sql.js. Built with Next.js.' },
-    { key: 'fileflow', name: 'FileFlow', x: 38, y: 61, url: 'https://fileflowpc.vercel.app',
+    { key: 'fileflow', name: 'FileFlow', x: MAP.stops.fileflow[0], y: MAP.stops.fileflow[1], url: 'https://fileflowpc.vercel.app',
       text: 'A desktop app that automates file chores. Built with Tauri.' },
-    { key: 'akari', name: 'AKARI', x: 164, y: 61, url: 'https://akarijapaneseclub.vercel.app',
+    { key: 'akari', name: 'AKARI', x: MAP.stops.akari[0], y: MAP.stops.akari[1], url: 'https://akarijapaneseclub.vercel.app',
       text: 'Website for a Japanese culture club, with a meetings and attendance area. Next.js and Supabase.' },
   ];
-  const IDLE = 'Halo! Walk to one of the four signs on the island to read about it.';
+  const IDLE = 'Halo! Walk to one of the six signs on the island to read about it.';
   const NEAR = 12, SPEED = 24;
 
   // Same shapes the map generator uses, so the mascot stays on land and out of the lake.
   const island = (x, y) => ((x - 100) / 96) ** 4 + ((y - 50) / 47) ** 4 - 0.05 * Math.sin(x * 0.31) - 0.05 * Math.cos(y * 0.45 + x * 0.07);
-  const lake = (x, y) => ((x - 100) / 21) ** 2 + ((y - 75) / 7) ** 2;
-  const walkable = (x, y) => island(x, y) <= 0.8 && lake(x, y) > 1.3;
+  const L = MAP.lake, lake = (x, y) => ((x - L.x) / L.rx) ** 2 + ((y - L.y) / L.ry) ** 2;
+  const blocks = MAP.objects.filter(o => o.block).map(o => o.block);
+  const blocked = (x, y) => blocks.some(([bx, by, bw, bh]) => x >= bx && x < bx + bw && y >= by && y < by + bh);
+  const walkable = (x, y) => island(x, y) <= 0.8 && lake(x, y) > 1.3 && !blocked(x, y);
 
   const $ = id => document.getElementById(id);
-  const stage = $('stage'), hero = $('hero');
-  const pos = { x: 100, y: 50 };
+  const stage = $('stage'), world = $('world'), hero = $('hero');
+  const pos = { x: 100, y: 31 };
   const held = new Set();
   let current, last = performance.now(), walkClock = 0, typing;
 
@@ -199,11 +210,20 @@
       <b>${p.name}</b><p>${p.text}</p><a href="${p.url}">Open ${p.name}</a>${visited.has(p.key) ? ' <span class="seen">visited</span>' : ''}</div></li>`).join('');
   }
 
+  // Scenery as separate images, stacked by the row each one stands on.
+  const pct = (v, of) => `${(v / of) * 100}%`;
+  for (const o of MAP.objects) {
+    const img = document.createElement('img');
+    img.src = o.src; img.alt = '';
+    Object.assign(img.style, { left: pct(o.x, 200), top: pct(o.y, 100), width: pct(o.w, 200), zIndex: String(o.z * 10) });
+    world.appendChild(img);
+  }
+
   // Pings above each sign until it has been visited.
   const pings = PLACES.map(p => {
     const el = document.createElement('span');
     el.className = 'ping';
-    stage.appendChild(el);
+    world.appendChild(el);
     return el;
   });
 
@@ -231,7 +251,7 @@
       $('p-name').textContent = 'ANRLLDEV';
       $('p-img').src = `${avatar}-a.svg`;
       $('p-actions').hidden = true;
-      type(visited.size === 4 ? 'You found every place. Thanks for walking around!' : IDLE);
+      type(visited.size === PLACES.length ? 'You found every place. Thanks for walking around!' : IDLE);
     }
   }
 
@@ -265,20 +285,21 @@
       const next = `${avatar}-${Math.floor(walkClock * 6) % 2 ? 'b' : 'a'}.svg`;
       if (hero.dataset.f !== next) { hero.dataset.f = next; hero.src = next; }
     }
-    const cell = (stage.clientWidth - 12) / 200;
-    hero.style.left = `${6 + Math.round(pos.x - 4) * cell}px`;
-    hero.style.top = `${6 + Math.round(pos.y - 10) * cell}px`;
+    const cell = world.clientWidth / 200;
+    hero.style.left = pct(Math.round(pos.x) - 4, 200);
+    hero.style.top = pct(Math.round(pos.y) - 10, 100);
+    hero.style.zIndex = String(Math.round(pos.y) * 10 + 5);
     PLACES.forEach((p, i) => {
       pings[i].hidden = visited.has(p.key);
-      pings[i].style.left = `${6 + (p.x - 1) * cell}px`;
-      pings[i].style.top = `${6 + (p.y - 14) * cell}px`;
+      pings[i].style.left = `${(p.x - 1) * cell}px`;
+      pings[i].style.top = `${(p.y - 14) * cell}px`;
     });
     show(PLACES.find(p => Math.hypot(p.x - pos.x, p.y - pos.y) < NEAR) || null);
     requestAnimationFrame(frame);
   }
 
   renderPlaces();
-  type(visited.size === 4 ? 'You found every place. Thanks for walking around!' : IDLE);
+  type(visited.size === PLACES.length ? 'You found every place. Thanks for walking around!' : IDLE);
   current = null;
   requestAnimationFrame(frame);
 </script>
