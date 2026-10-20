@@ -1,5 +1,5 @@
 // Generates the animated SVGs in ../assets and the map/mascot used by ../play.
-// Run: node scripts/generate.mjs   (stats.svg and snake.svg come from the workflow)
+// Run: node scripts/generate.mjs   (stats.svg comes from the workflow)
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -154,7 +154,7 @@ function wrap(text, maxCells) {
 
 function about() {
   const P = 4, TP = 2, CW = 200, W = CW * P;
-  const TEXT = "Halo! I'm anrlldev. Right now I'm building a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club. Every quest card below opens the real site, and the stats and snake further down refresh every day.";
+  const TEXT = "Halo! I'm anrlldev. Right now I'm building a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club. Every quest card below opens the real site, and the stats further down refresh every day.";
   const TX = 184, TY = 76, LH = 24;
   const LINES = wrap(TEXT, Math.floor((W - TX - 32) / TP));
   const CH = Math.max(52, Math.ceil((TY + LINES.length * LH + 20) / P));
@@ -559,18 +559,6 @@ function footer() {
   writeSvg(out('assets/footer.svg'), W, H, 'Thanks for visiting!', css, L + g('tw0', stars[0]) + g('tw1', stars[1]) + title + g('glow', fireGlow) + log + mascot + fire + zs + flies);
 }
 
-// ---------- empty state for the snake until the workflow has run ----------
-function snakePlaceholder() {
-  const file = out('assets/generated/snake.svg');
-  if (existsSync(file) && !process.argv.includes('--placeholders')) return;
-  const P = 4, CW = 200, CH = 40;
-  const L = new Layer(P);
-  panel(L, CW, CH);
-  const msg = 'The snake shows up after the first workflow run.';
-  const T = new Layer(2, Math.round((CW * P - textWidth(msg) * 2) / 2), 74).text(msg, 0, 0, { color: C.cream });
-  writeSvg(file, CW * P, CH * P, msg, '', L.toString() + T);
-}
-
 function gameSprites() {
   for (const [key, d] of Object.entries(LANDMARKS)) {
     const one = new Layer(6, 6, 6).sprite(d.rows, 0, 0, d.pal);
@@ -588,12 +576,10 @@ map({ withWalker: false });
 ribbon('title-map.svg', 'WORLD MAP');
 ribbon('title-quests.svg', 'QUEST LOG');
 ribbon('title-stats.svg', 'STATS');
-ribbon('title-snake.svg', 'BATTLE LOG');
 ribbon('title-contact.svg', 'FIND ME');
 QUESTS.forEach(questCard);
 button('btn-play.svg', 'WALK AROUND THE MAP', 480);
 button('btn-instagram.svg', 'INSTAGRAM @ir.prat_', 390);
 button('btn-linkedin.svg', 'LINKEDIN', 390);
 footer();
-snakePlaceholder();
 gameSprites();

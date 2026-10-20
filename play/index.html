@@ -33,7 +33,6 @@
   .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .title { display: flex; align-items: baseline; gap: 10px; }
   .title h1 { margin: 0; font-size: 22px; font-weight: 600; color: var(--yellow); text-shadow: 2px 2px 0 var(--plum); }
-  .title span { color: var(--lavender); font-size: 13px; }
   .hud { display: flex; gap: 8px; align-items: center; font-size: 13px; }
   .chip { padding: 3px 9px; background: var(--ink); border: 2px solid var(--haze); color: var(--cream); }
   .chip b { color: var(--yellow); font-weight: 600; }
@@ -79,7 +78,6 @@
   footer { margin-top: 32px; font-size: 13px; color: var(--lavender); }
 
   @media (max-width: 520px) {
-    .title span { display: none; }
     .dialog { grid-template-columns: 64px 1fr; padding: 14px; gap: 12px; }
     .portrait { width: 64px; height: 64px; } .portrait img { max-width: 48px; max-height: 50px; }
   }
@@ -89,7 +87,7 @@
 <body>
 <main>
   <div class="bar">
-    <div class="title"><h1>anrlldev world map</h1><span>a tiny walkable portfolio</span></div>
+    <div class="title"><h1>anrlldev world map</h1></div>
     <div class="hud">
       <span class="chip keys"><kbd>WASD</kbd> or <kbd>arrows</kbd> to walk</span>
       <span class="chip">Visited <b id="count">0</b>/4</span>

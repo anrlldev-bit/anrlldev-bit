@@ -37,12 +37,6 @@
   <img src="assets/generated/stats.svg" width="100%" alt="GitHub stats, updated daily" />
 </p>
 
-<img src="assets/title-snake.svg" alt="Battle log" />
-
-<p align="center">
-  <img src="assets/generated/snake.svg" width="100%" alt="Snake eating the contribution graph" />
-</p>
-
 <img src="assets/title-contact.svg" alt="Find me" />
 
 <p align="center">

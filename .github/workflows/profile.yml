@@ -28,16 +28,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Snake
-        uses: Platane/snk@v3
-        with:
-          github_user_name: ${{ github.repository_owner }}
-          outputs: |
-            assets/generated/snake.svg?palette=github-dark&color_snake=#ffec27&color_dots=#13112e,#1c1847,#2a2163,#5b3fa8,#00e436
-
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/generated
-          git diff --cached --quiet || { git commit -m "Update stats and snake"; git push; }
+          git diff --cached --quiet || { git commit -m "Update stats"; git push; }
