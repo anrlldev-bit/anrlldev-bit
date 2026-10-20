@@ -663,6 +663,12 @@ function footer() {
 }
 
 function gameSprites() {
+  const LANTERN = ['....kkkk....', '..kkkkkkkk..', '.rrrrrrrrrr.', 'rrwrrrrrrrrr', 'RRRRRRRRRRRR', 'rrwrrrrrrrrr', 'rrrrrrrrrrrr', 'RRRRRRRRRRRR', 'rrrrrrrrrrrr', 'rrrrrrrrrrrr', 'RRRRRRRRRRRR', '.rrrrrrrrrr.', '..kkkkkkkk..', '....kkkk....', '.....yy.....', '.....yy.....'];
+  for (const [name, pal] of [['lantern-off', { k: C.stone, r: C.plum, R: '#4b1531', w: '#a8336f', y: '#a08a40' }], ['lantern-on', { k: C.stone, r: '#ffb347', R: '#e8862a', w: C.cream, y: C.yellow }]]) {
+    const L = new Layer(4, 4, 4);
+    for (const [k, c] of propCells(LANTERN, pal)) { const [a, b] = k.split(',').map(Number); L.set(a, b, c); }
+    writeSvg(out(`play/${name}.svg`), 14 * 4, 18 * 4, name, '', L.toString());
+  }
   for (const key of Object.keys(LANDMARKS)) {
     const d = drawLandmark(key, 6, 6, 6);
     writeSvg(out(`play/lm-${key}.svg`), d.w + 12, d.h + 12, LANDMARKS[key].label, BASE_CSS + ART_CSS, d.svg);

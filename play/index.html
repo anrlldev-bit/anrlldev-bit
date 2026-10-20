@@ -11,7 +11,7 @@
 <style>
   :root {
     --ink: #0b0a1a; --night: #13112e; --dusk: #1c1847; --haze: #2a2163;
-    --cream: #fff1e8; --lavender: #83769c; --yellow: #ffec27; --orange: #ffa300; --plum: #7e2553; --pink: #ff77a8;
+    --cream: #fff1e8; --lavender: #83769c; --yellow: #ffec27; --orange: #ffa300; --plum: #7e2553; --pink: #ff77a8; --red: #ff004d;
   }
   * { box-sizing: border-box; }
   html { background: #0d1117; }
@@ -20,7 +20,7 @@
     font: 15px/1.55 'Pixelify Sans', ui-monospace, monospace;
     background: #0d1117;
   }
-  main { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
+  main { max-width: 1480px; margin: 0 auto; padding: 20px 16px 48px; }
   a { color: var(--yellow); }
   :focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
 
@@ -46,7 +46,13 @@
   .world .cat { width: 2.5%; }
   @keyframes ping { 50% { opacity: 0; } }
 
-  .dialog { display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: center; margin-top: 18px; padding: 18px 22px; min-height: 150px; }
+  /* Wide screens: map on the left, dialog and places in a side column. */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 22px; align-items: start; }
+  .side { display: grid; gap: 18px; align-content: start; }
+  .side h2 { margin: 6px 0 0; }
+  .side .places { grid-template-columns: 1fr; gap: 10px; }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } .side .places { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); } }
+  .dialog { display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: center; margin-top: 0; padding: 18px 22px; min-height: 150px; }
   .portrait { width: 96px; height: 96px; display: grid; place-items: center; background: var(--dusk); border: 3px solid var(--cream); box-shadow: inset 0 0 0 3px var(--ink); }
   .portrait img { max-width: 72px; max-height: 76px; image-rendering: pixelated; }
   .name { display: inline-block; padding: 1px 10px; margin-bottom: 6px; background: var(--plum); border: 2px solid var(--ink); color: var(--yellow); font-weight: 600; font-size: 14px; }
@@ -84,6 +90,40 @@
   .places { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
   .places li { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; padding: 14px; }
   .places img { width: 44px; image-rendering: pixelated; }
+  .maincol { display: grid; gap: 18px; align-content: start; }
+  .mini { padding: 16px 18px 18px; }
+  .mini-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .mini-head h2 { margin: 0; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tab { font: inherit; font-size: 13px; padding: 5px 12px; color: var(--cream); background: var(--ink); border: 2px solid var(--haze); cursor: pointer; }
+  .tab[aria-selected="true"] { color: var(--yellow); background: var(--plum); border-color: var(--ink); box-shadow: inset 0 2px 0 var(--pink); }
+  .game[hidden] { display: none; }
+  .mini-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .btn.small { min-height: 32px; padding: 4px 12px; font-size: 13px; margin-left: auto; }
+  .game .hint { margin: 0 0 12px; }
+  .cards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 640px) { .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .card { position: relative; box-sizing: border-box; width: 100%; min-width: 0; aspect-ratio: 1; height: auto; overflow: hidden; display: block; padding: 0; cursor: pointer; background: var(--plum); border: 3px solid var(--cream); box-shadow: inset 0 0 0 3px var(--ink), inset 0 -6px 0 3px #3b0f28; }
+  .card img { position: absolute; inset: 18%; width: 64%; height: 64%; object-fit: contain; image-rendering: pixelated; visibility: hidden; }
+  .card::before { content: ''; position: absolute; inset: 22%; background: url(cat-a.svg) center / contain no-repeat; image-rendering: pixelated; opacity: .9; }
+  .card.up::before, .card.done::before { display: none; }
+  .card.up, .card.done { background: var(--dusk); box-shadow: inset 0 0 0 3px var(--ink); }
+  .card.up img, .card.done img { visibility: visible; }
+  .card.done { border-color: var(--yellow); cursor: default; }
+  .lanterns { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px 0; padding: 0 0 14px; background: var(--ink); border: 3px solid var(--haze); }
+  @media (max-width: 640px) { .lanterns { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .lantern { aspect-ratio: 3 / 4; border: 0; padding: 0; cursor: pointer; background: transparent; }
+  .lantern { position: relative; display: grid; justify-items: center; padding-top: 14px; }
+  .lantern::after { content: ''; position: absolute; top: 6px; left: 0; right: 0; height: 3px; background: #8a6a4a; box-shadow: 0 2px 0 #4b3420; }
+  .lantern::before { content: ''; position: absolute; top: 8px; left: 50%; width: 3px; height: 12px; margin-left: -1px; background: #5f574f; }
+  .lantern img { width: 62%; image-rendering: pixelated; position: relative; }
+  .lantern .on { display: none; filter: drop-shadow(0 0 10px rgba(255, 179, 71, .85)); }
+  .lantern.lit .on { display: block; } .lantern.lit .off { display: none; }
+  .mini-stage { position: relative; }
+  .mini canvas { cursor: pointer; display: block; width: 100%; image-rendering: pixelated; border: 3px solid var(--ink); background: var(--night); touch-action: none; }
+  .mini-over { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; text-align: center; background: rgba(11, 10, 26, .78); }
+  .mini-over[hidden] { display: none; }
+  .mini-over p { margin: 0; max-width: 420px; font-size: 13px; }
   .places b { display: block; color: var(--cream); font-weight: 600; }
   .places p { margin: 2px 0 12px; color: var(--lavender); font-size: 13px; line-height: 1.45; }
   footer { margin-top: 32px; font-size: 13px; color: var(--lavender); }
@@ -106,6 +146,8 @@
     </div>
   </div>
 
+  <div class="layout">
+  <div class="maincol">
   <div class="stage win" id="stage">
     <div class="world" id="world">
       <img class="map" src="map.svg" alt="Pixel island with a lake, a ring road and six places: Kompas signpost, Ivory tower, Tendril tree, DBLab library, FileFlow workshop and AKARI shrine.">
@@ -114,6 +156,71 @@
     </div>
   </div>
 
+  <section class="mini win" aria-labelledby="mini-title">
+    <div class="mini-head">
+      <h2 id="mini-title">Mini games</h2>
+      <div class="tabs" role="tablist" aria-label="Choose a mini game">
+        <button class="tab" role="tab" aria-selected="true" data-game="fish" id="t-fish">Catch the fish</button>
+        <button class="tab" role="tab" aria-selected="false" data-game="memory" id="t-memory">Memory match</button>
+        <button class="tab" role="tab" aria-selected="false" data-game="lantern" id="t-lantern">Lantern tap</button>
+        <button class="tab" role="tab" aria-selected="false" data-game="run" id="t-run">Cat run</button>
+      </div>
+    </div>
+
+    <div class="game" id="g-fish" role="tabpanel" aria-labelledby="t-fish">
+      <div class="mini-bar">
+        <span class="chip">Score <b id="m-score">0</b></span>
+        <span class="chip">Best <b id="m-best">0</b></span>
+        <span class="chip">Misses left <b id="m-lives">3</b></span>
+      </div>
+      <div class="mini-stage">
+        <canvas id="mini" width="800" height="240" aria-label="Catch the fish: move the cat to catch falling fish"></canvas>
+        <div class="mini-over" id="m-over">
+          <p id="m-msg">Move the cat with <kbd>A</kbd> <kbd>D</kbd> or the arrow keys (or drag on a phone). Three missed fish and it is over.</p>
+          <button class="btn" id="m-play" type="button">Play</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="game" id="g-memory" role="tabpanel" aria-labelledby="t-memory" hidden>
+      <div class="mini-bar">
+        <span class="chip">Moves <b id="mm-moves">0</b></span>
+        <span class="chip">Pairs <b id="mm-pairs">0</b>/6</span>
+        <span class="chip">Best <b id="mm-best">-</b></span>
+        <button class="btn small" id="mm-new" type="button">New game</button>
+      </div>
+      <p class="hint" id="mm-msg">Flip two cards at a time and find the six pairs of places.</p>
+      <div class="cards" id="mm-grid"></div>
+    </div>
+
+    <div class="game" id="g-lantern" role="tabpanel" aria-labelledby="t-lantern" hidden>
+      <div class="mini-bar">
+        <span class="chip">Score <b id="ln-score">0</b></span>
+        <span class="chip">Time <b id="ln-time">20</b>s</span>
+        <span class="chip">Best <b id="ln-best">0</b></span>
+        <button class="btn small" id="ln-play" type="button">Play</button>
+      </div>
+      <p class="hint" id="ln-msg">Lanterns light up one by one. Tap a lit lantern before it goes out. 20 seconds.</p>
+      <div class="lanterns" id="ln-grid"></div>
+    </div>
+
+    <div class="game" id="g-run" role="tabpanel" aria-labelledby="t-run" hidden>
+      <div class="mini-bar">
+        <span class="chip">Distance <b id="rn-score">0</b></span>
+        <span class="chip">Best <b id="rn-best">0</b></span>
+      </div>
+      <div class="mini-stage">
+        <canvas id="run" width="800" height="240" aria-label="Cat run: jump over rocks and bushes"></canvas>
+        <div class="mini-over" id="rn-over">
+          <p id="rn-msg">Jump with <kbd>Space</kbd>, <kbd>W</kbd> or the up arrow, duck with <kbd>S</kbd> or the down arrow. On a phone, tap the top half to jump and hold the bottom half to duck. Birds join after a while.</p>
+          <button class="btn" id="rn-play" type="button">Play</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div class="side">
   <section class="dialog win" aria-live="polite">
     <div class="portrait"><img id="p-img" src="boy-a.svg" alt=""></div>
     <div>
@@ -146,8 +253,10 @@
 
   <h2>All places</h2>
   <ul class="places" id="places"></ul>
+  </div>
+  </div>
 
-  <footer><a href="https://github.com/anrlldev-bit">Back to the GitHub profile</a></footer>
+  <footer><a class="btn" href="https://github.com/anrlldev-bit">Back to the GitHub profile</a></footer>
 </main>
 
 <script src="stops.js"></script>
@@ -249,9 +358,279 @@
     }
   }
 
+  // ---------- mini game: the cat catches falling fish ----------
+  const mini = (() => {
+    const cv = $('mini'), ctx = cv.getContext('2d'), CW = 200, CH = 60, GROUND = 54;
+    // Drawn at 4x so moving things glide in quarter-pixel steps.
+    ctx.setTransform(4, 0, 0, 4, 0, 0); ctx.imageSmoothingEnabled = false;
+    const q = v => Math.round(v * 4) / 4;
+    const over = $('m-over'), msg = $('m-msg');
+    const catImg = new Image(); catImg.src = 'cat-a.svg';
+    const catImgB = new Image(); catImgB.src = 'cat-b.svg';
+    let best = 0;
+    try { best = Number(localStorage.getItem('fishBest')) || 0; } catch {}
+    $('m-best').textContent = best;
+    const st = { playing: false, active: true, x: 95, dir: 0, target: null, fish: [], score: 0, lives: 3, spawn: 0, speed: 14, t: 0 };
+    const stars = Array.from({ length: 30 }, () => [Math.floor(Math.random() * CW), Math.floor(Math.random() * 40)]);
+    // 12 x 7 fish facing down-left as it falls: outline, eye, light belly, stripe, forked tail.
+    const FISH_ROWS = ['...oooo.....', '.oobbsboo.oo', 'obwebsbbbobo', 'obbbbsbbbbbo', 'olllllbbbobo', '.oolllloo.oo', '...oooo.....'];
+    const FISH = [
+      { b: '#29adff', s: '#1d6fbf', l: '#b8e6ff' },
+      { b: '#ffa300', s: '#d9741f', l: '#ffe0a8' },
+      { b: '#ff77a8', s: '#c94a85', l: '#ffd1e3' },
+      { b: '#00e436', s: '#008751', l: '#c8ffb0' },
+    ];
+    function drawFish(x, y, c) {
+      const pal = { o: '#0b0a1a', b: c.b, s: c.s, l: c.l, w: '#fff1e8', e: '#0b0a1a' };
+      FISH_ROWS.forEach((row, j) => [...row].forEach((ch, i) => { if (pal[ch]) { ctx.fillStyle = pal[ch]; ctx.fillRect(x + i, y + j, 1, 1); } }));
+    }
+    function draw() {
+      ctx.fillStyle = '#13112e'; ctx.fillRect(0, 0, CW, CH);
+      ctx.fillStyle = '#1c1847'; ctx.fillRect(0, 24, CW, 30);
+      ctx.fillStyle = '#c2c3c7';
+      for (const [sx, sy] of stars) if ((sx + Math.floor(st.t * 2)) % 7) ctx.fillRect(sx, sy, 1, 1);
+      ctx.fillStyle = '#00e436'; ctx.fillRect(0, GROUND, CW, 1);
+      ctx.fillStyle = '#008751'; ctx.fillRect(0, GROUND + 1, CW, 2);
+      ctx.fillStyle = '#ab5236'; ctx.fillRect(0, GROUND + 3, CW, CH - GROUND - 3);
+      for (const f of st.fish) drawFish(q(f.x), q(f.y), f.c);
+      const img = st.playing && Math.floor(st.t * 8) % 2 ? catImgB : catImg;
+      if (img.complete) ctx.drawImage(img, q(st.x), GROUND - 9, 10, 9);
+    }
+    function end() {
+      st.playing = false; playing = false;
+      if (st.score > best) { best = st.score; try { localStorage.setItem('fishBest', String(best)); } catch {} $('m-best').textContent = best; }
+      msg.textContent = `Game over. You caught ${st.score} fish.`;
+      $('m-play').textContent = 'Play again';
+      over.hidden = false;
+      $('m-play').focus();
+    }
+    function step(dt) {
+      st.t += dt;
+      if (!st.active) return;
+      if (!st.playing) return draw();
+      const move = (st.target != null ? Math.sign(st.target - (st.x + 5)) * Math.min(1, Math.abs(st.target - (st.x + 5)) / 3) : st.dir) * 90 * dt;
+      st.x = Math.max(0, Math.min(CW - 10, st.x + move));
+      st.spawn -= dt;
+      if (st.spawn <= 0) {
+        st.fish.push({ x: 2 + Math.random() * (CW - 16), y: -4, v: st.speed + Math.random() * 6, c: FISH[Math.floor(Math.random() * FISH.length)] });
+        st.spawn = Math.max(0.45, 1.2 - st.score * 0.03);
+      }
+      for (const f of st.fish) f.y += f.v * dt;
+      for (const f of [...st.fish]) {
+        const caught = f.y + 6 >= GROUND - 8 && f.y <= GROUND && f.x + 11 >= st.x && f.x <= st.x + 10;
+        if (caught) { st.fish.splice(st.fish.indexOf(f), 1); st.score++; st.speed += 0.6; $('m-score').textContent = st.score; }
+        else if (f.y > GROUND) { st.fish.splice(st.fish.indexOf(f), 1); st.lives--; $('m-lives').textContent = st.lives; if (st.lives <= 0) end(); }
+      }
+      draw();
+    }
+    function start() {
+      Object.assign(st, { playing: true, x: 95, dir: 0, target: null, fish: [], score: 0, lives: 3, spawn: 0.3, speed: 14 });
+      $('m-score').textContent = 0; $('m-lives').textContent = 3;
+      over.hidden = true; playing = true; held.clear();
+      cv.focus?.();
+    }
+    $('m-play').addEventListener('click', start);
+    const toCell = e => { const r = cv.getBoundingClientRect(); return ((e.clientX - r.left) / r.width) * CW; };
+    cv.addEventListener('pointerdown', e => { if (st.playing) { st.target = toCell(e); try { cv.setPointerCapture(e.pointerId); } catch {} } });
+    cv.addEventListener('pointermove', e => { if (st.playing && st.target != null) st.target = toCell(e); });
+    ['pointerup', 'pointercancel'].forEach(ev => cv.addEventListener(ev, () => { st.target = null; }));
+    return { step, st };
+  })();
+
+  // ---------- tabs ----------
+  document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+    document.querySelectorAll('.game').forEach(g => { g.hidden = g.id !== `g-${tab.dataset.game}`; });
+    mini.st.active = tab.dataset.game === 'fish';
+    runner.setActive(tab.dataset.game === 'run');
+    if (!mini.st.active && mini.st.playing) { mini.st.playing = false; playing = false; $('m-over').hidden = false; $('m-msg').textContent = 'Paused. Press Play to start over.'; }
+  }));
+
+  // ---------- memory match: six pairs of the island's places ----------
+  (() => {
+    const grid = $('mm-grid');
+    let first = null, lock = false, moves = 0, pairs = 0, best = null;
+    try { best = Number(localStorage.getItem('memoryBest')) || null; } catch {}
+    $('mm-best').textContent = best ?? '-';
+    function deal() {
+      const keys = PLACES.map(p => p.key);
+      const deck = [...keys, ...keys].sort(() => Math.random() - 0.5);
+      grid.innerHTML = deck.map((k, i) => `<button class="card" type="button" data-key="${k}" aria-label="Card ${i + 1}"><img src="lm-${k}.svg" alt=""></button>`).join('');
+      first = null; lock = false; moves = 0; pairs = 0;
+      $('mm-moves').textContent = 0; $('mm-pairs').textContent = 0;
+      $('mm-msg').textContent = 'Flip two cards at a time and find the six pairs of places.';
+    }
+    grid.addEventListener('click', e => {
+      const card = e.target.closest('.card');
+      if (!card || lock || card === first || card.classList.contains('done') || card.classList.contains('up')) return;
+      card.classList.add('up');
+      card.setAttribute('aria-label', PLACES.find(p => p.key === card.dataset.key).name);
+      if (!first) { first = card; return; }
+      moves++; $('mm-moves').textContent = moves;
+      if (first.dataset.key === card.dataset.key) {
+        first.classList.add('done'); card.classList.add('done'); first = null; pairs++;
+        $('mm-pairs').textContent = pairs;
+        if (pairs === 6) {
+          $('mm-msg').textContent = `All pairs found in ${moves} moves.`;
+          if (best == null || moves < best) { best = moves; try { localStorage.setItem('memoryBest', String(best)); } catch {} $('mm-best').textContent = best; }
+        }
+      } else {
+        lock = true;
+        const a = first, b = card;
+        setTimeout(() => { a.classList.remove('up'); b.classList.remove('up'); lock = false; }, 700);
+        first = null;
+      }
+    });
+    $('mm-new').addEventListener('click', deal);
+    deal();
+  })();
+
+  // ---------- lantern tap: hit lit lanterns for 20 seconds ----------
+  (() => {
+    const grid = $('ln-grid'), N = 12;
+    grid.innerHTML = Array.from({ length: N }, (_, i) => `<button class="lantern" type="button" data-i="${i}" aria-label="Lantern ${i + 1}"><img class="off" src="lantern-off.svg" alt=""><img class="on" src="lantern-on.svg" alt=""></button>`).join('');
+    const lanterns = [...grid.children];
+    let score = 0, timer = null, tick = null, left = 20, best = 0;
+    try { best = Number(localStorage.getItem('lanternBest')) || 0; } catch {}
+    $('ln-best').textContent = best;
+    const lightOne = () => {
+      const dark = lanterns.filter(l => !l.classList.contains('lit'));
+      const l = dark[Math.floor(Math.random() * dark.length)];
+      l.classList.add('lit');
+      setTimeout(() => l.classList.remove('lit'), Math.max(500, 1000 - score * 15));
+    };
+    function stop() {
+      clearInterval(timer); clearInterval(tick); timer = null;
+      lanterns.forEach(l => l.classList.remove('lit'));
+      $('ln-msg').textContent = `Time is up. You lit up ${score} lanterns.`;
+      $('ln-play').textContent = 'Play again';
+      if (score > best) { best = score; try { localStorage.setItem('lanternBest', String(best)); } catch {} $('ln-best').textContent = best; }
+    }
+    $('ln-play').addEventListener('click', () => {
+      if (timer) return;
+      score = 0; left = 20; $('ln-score').textContent = 0; $('ln-time').textContent = 20;
+      $('ln-msg').textContent = 'Go!';
+      timer = setInterval(lightOne, 650);
+      tick = setInterval(() => { left--; $('ln-time').textContent = left; if (left <= 0) stop(); }, 1000);
+    });
+    grid.addEventListener('click', e => {
+      const l = e.target.closest('.lantern');
+      if (!l || !timer || !l.classList.contains('lit')) return;
+      l.classList.remove('lit');
+      score++; $('ln-score').textContent = score;
+    });
+  })();
+
+  // ---------- cat run: endless runner ----------
+  const runner = (() => {
+    const cv = $('run'), ctx = cv.getContext('2d'), CW = 200, CH = 60, GROUND = 50;
+    ctx.setTransform(4, 0, 0, 4, 0, 0); ctx.imageSmoothingEnabled = false;
+    const q = v => Math.round(v * 4) / 4;
+    const catA = new Image(); catA.src = 'cat-a.svg';
+    const catB = new Image(); catB.src = 'cat-b.svg';
+    let best = 0, active = false;
+    try { best = Number(localStorage.getItem('runBest')) || 0; } catch {}
+    $('rn-best').textContent = best;
+    const st = { on: false, y: 0, vy: 0, obs: [], dist: 0, speed: 50, next: 1, t: 0, duck: false };
+    const hills = Array.from({ length: 8 }, (_, i) => [i * 34, 6 + (i * 7) % 9]);
+    // Ground obstacles to jump over, birds to duck under (or jump, if they fly low).
+    const ROCK = ['...oooo...', '..oswwso..', '.osssssSo.', 'ossssssSSo', 'osSsssSSSo', 'oooooooooo'];
+    const BUSH = ['...oo..oo...', '..oggooggo..', '.ogGgggggGo.', 'ogggGgrGgggo', 'oggrgggggGgo', 'oGgggGgggGGo', '.oGGGGGGGGo.', '..oooooooo..'];
+    const BIRD_A = ['....oo.....', '...owwo....', '...owwwo...', '.oobwwwboo.', 'yobebbbbbbo', '.oooooooooo'];
+    const BIRD_B = ['...........', '...........', '.oooooooooo', 'yobebbbbbbo', '.oobwwwboo.', '...owwwo...'];
+    const PAL = { o: '#0b0a1a', s: '#c2c3c7', S: '#5f574f', w: '#fff1e8', g: '#00e436', G: '#008751', r: '#ff004d', b: '#83769c', e: '#0b0a1a', y: '#ffa300' };
+    const sprite = (rows, x, y) => rows.forEach((r, j) => [...r].forEach((ch, i) => { if (PAL[ch]) { ctx.fillStyle = PAL[ch]; ctx.fillRect(x + i, y + j, 1, 1); } }));
+
+    function draw() {
+      ctx.fillStyle = '#29adff'; ctx.fillRect(0, 0, CW, CH);
+      ctx.fillStyle = '#7ec8ff'; ctx.fillRect(0, 22, CW, 28);
+      ctx.fillStyle = '#fff1e8';
+      for (const [cx, cy] of [[30, 8], [120, 12], [170, 6]]) { const x = ((cx - st.t * 6) % (CW + 30) + CW + 30) % (CW + 30) - 20; ctx.fillRect(q(x), cy, 12, 3); ctx.fillRect(q(x) + 3, cy - 2, 6, 2); }
+      ctx.fillStyle = '#008751';
+      for (const [hx, hh] of hills) { const x = q(((hx - st.dist * 0.3) % 272 + 272) % 272 - 40); ctx.fillRect(x, GROUND - hh, 30, hh); ctx.fillRect(x + 4, GROUND - hh - 3, 22, 3); }
+      ctx.fillStyle = '#00e436'; ctx.fillRect(0, GROUND, CW, 2);
+      ctx.fillStyle = '#ab5236'; ctx.fillRect(0, GROUND + 2, CW, CH - GROUND - 2);
+      ctx.fillStyle = '#742f29';
+      for (let x = -((st.dist * 1) % 9); x < CW; x += 9) ctx.fillRect(q(x), GROUND + 5, 2, 1);
+      for (const o of st.obs) {
+        if (o.bird) sprite(Math.floor(st.t * 6) % 2 ? BIRD_A : BIRD_B, q(o.x), GROUND - o.alt - 6);
+        else sprite(o.rows, q(o.x), GROUND - o.rows.length);
+      }
+      const img = st.on && st.y === 0 && Math.floor(st.t * 10) % 2 ? catB : catA;
+      if (img.complete) {
+        if (st.duck && st.y === 0) ctx.drawImage(img, 19, GROUND - 6, 12, 6);
+        else ctx.drawImage(img, 20, q(GROUND - 9 - st.y), 10, 9);
+      }
+    }
+    function end() {
+      st.on = false; playing = false;
+      const d = Math.floor(st.dist / 10);
+      if (d > best) { best = d; try { localStorage.setItem('runBest', String(best)); } catch {} $('rn-best').textContent = best; }
+      $('rn-msg').textContent = `Bonk! You ran ${d} m.`;
+      $('rn-play').textContent = 'Play again';
+      $('rn-over').hidden = false;
+      $('rn-play').focus();
+    }
+    function jump() { if (st.on && st.y === 0 && !st.duck) st.vy = 62; }
+    function duck(v) { st.duck = v; if (v && st.y > 0) st.vy = Math.min(st.vy, -40); }
+    function step(dt) {
+      st.t += dt;
+      if (!active) return;
+      if (st.on) {
+        st.dist += st.speed * dt; st.speed += dt * 1.6;
+        $('rn-score').textContent = Math.floor(st.dist / 10);
+        st.vy -= 190 * dt; st.y = Math.max(0, st.y + st.vy * dt); if (st.y === 0) st.vy = Math.max(0, st.vy);
+        st.next -= dt;
+        if (st.next <= 0) {
+          const r = Math.random();
+          if (st.dist > 300 && r < 0.35) st.obs.push({ x: CW + 4, bird: true, alt: [2, 8, 14][Math.floor(Math.random() * 3)] });
+          else st.obs.push({ x: CW + 4, rows: r < 0.68 ? ROCK : BUSH }); st.next = 0.9 + Math.random() * 1.1 - Math.min(0.4, st.speed / 400);
+        }
+        for (const o of st.obs) o.x -= (o.bird ? st.speed * 1.15 : st.speed) * dt;
+        st.obs = st.obs.filter(o => o.x > -14);
+        // Cat box: 9 tall standing, 6 tall when ducking on the ground.
+        const catH = st.duck && st.y === 0 ? 5 : 8, catBottom = st.y, catTop = st.y + catH;
+        for (const o of st.obs) {
+          const w = o.bird ? 11 : o.rows[0].length;
+          const bottom = o.bird ? o.alt + 1 : 0, top = o.bird ? o.alt + 5 : o.rows.length - 1;
+          if (o.x < 20 + 9 && o.x + w > 20 + 1 && catBottom < top && catTop > bottom) { end(); break; }
+        }
+      }
+      draw();
+    }
+    function start() {
+      Object.assign(st, { on: true, y: 0, vy: 0, obs: [], dist: 0, speed: 50, next: 1.2, duck: false });
+      $('rn-over').hidden = true; playing = true; held.clear();
+    }
+    $('rn-play').addEventListener('click', start);
+    // Phone: tap the top half to jump, hold the bottom half to duck.
+    cv.addEventListener('pointerdown', e => { const r = cv.getBoundingClientRect(); if (e.clientY - r.top > r.height / 2) duck(true); else jump(); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => cv.addEventListener(ev, () => duck(false)));
+    return { step, jump, duck, isOn: () => st.on, setActive: v => { active = v; if (!v && st.on) { st.on = false; playing = false; $('rn-over').hidden = false; $('rn-msg').textContent = 'Paused. Press Play to start over.'; } if (v) draw(); } };
+  })();
+  addEventListener('keydown', e => {
+    if (!runner.isOn()) return;
+    if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') { runner.jump(); e.preventDefault(); }
+    if (e.code === 'KeyS' || e.code === 'ArrowDown') { runner.duck(true); e.preventDefault(); }
+  });
+  addEventListener('keyup', e => { if (e.code === 'KeyS' || e.code === 'ArrowDown') runner.duck(false); });
+
+  // While the mini game runs, the arrow keys steer the cat instead of the player.
+  let playing = false;
+  addEventListener('keydown', e => {
+    if (!playing) return;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') { mini.st.dir = -1; e.preventDefault(); }
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') { mini.st.dir = 1; e.preventDefault(); }
+    if (e.code === 'ArrowUp' || e.code === 'ArrowDown') e.preventDefault();
+  });
+  addEventListener('keyup', e => {
+    if ((e.code === 'ArrowLeft' || e.code === 'KeyA') && mini.st.dir < 0) mini.st.dir = 0;
+    if ((e.code === 'ArrowRight' || e.code === 'KeyD') && mini.st.dir > 0) mini.st.dir = 0;
+  });
+
   const KEYS = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
   addEventListener('keydown', e => {
-    if (!picker.hidden) return;
+    if (!picker.hidden || playing) return;
     if (KEYS[e.code]) { held.add(KEYS[e.code]); e.preventDefault(); }
     if (e.code === 'Enter' && current && document.activeElement === document.body) location.href = current.url;
   });
@@ -265,6 +644,8 @@
 
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
+    mini.step(dt);
+    runner.step(dt);
     last = now;
     let dx = 0, dy = 0;
     if (held.has('left')) dx--; if (held.has('right')) dx++;
