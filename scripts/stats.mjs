@@ -3,7 +3,7 @@
 // GITHUB_TOKEN is optional; without it the contribution count is left empty.
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { C, Layer, textWidth, writeSvg, frame, panel, outlinedText, ICON } from './pixel.mjs';
+import { C, Layer, textWidth, writeSvg, frame, panel, outlinedText } from './pixel.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const USER = process.argv[2] || process.env.GITHUB_REPOSITORY_OWNER || 'anrlldev-bit';
@@ -52,45 +52,46 @@ async function collect() {
 }
 
 function draw(d) {
-  const P = 4, CW = 200;
-  const langRows = d.languages.length ? d.languages.length * 10 : 30;
-  const CH = 88 + langRows + 30;
-  const L = new Layer(P);
+  const P = 4, TP = 3, CW = 200, W = CW * P;
+  const langH = d.languages.length ? d.languages.length * 30 : 54;
+  const CH = Math.ceil((270 + langH + 84) / P);
+  const L = new Layer(P), T = [];
+  const text = (str, x, y, color) => T.push(new Layer(TP, x, y).text(str, 0, 0, { color }));
   panel(L, CW, CH);
 
-  const cells = [
-    ['chest', d.repos, 'public repos'], ['heart', d.followers, 'followers'],
-    ['star', d.stars, 'stars'], ['leaf', d.contributions ?? '--', 'contributions'],
-  ];
-  cells.forEach(([icon, value, label], i) => {
-    const x = i % 2 ? 102 : 8, y = i < 2 ? 8 : 40;
-    frame(L, 90, 30, C.haze, C.navy, C.navy, x, y);
-    L.sprite(ICON[icon].rows, x + 4, y + 3, ICON[icon].pal);
-    L.text(label, x + 15, y + 4, { color: C.cream });
-    outlinedText(L, String(value), x + 15, y + 12, { scale: 2, fill: cy => (cy < 7 ? C.yellow : C.orange), outline: C.ink, shadow: C.plum });
+  const cells = [[d.repos, 'public repos'], [d.followers, 'followers'], [d.stars, 'stars'], [d.contributions ?? '--', 'contributions']];
+  cells.forEach(([value, label], i) => {
+    const x = i % 2 ? 102 : 8, y = i < 2 ? 8 : 32;
+    frame(L, 90, 22, C.haze, C.navy, C.navy, x, y);
+    text(label, x * P + 16, y * P + 12, C.lavender);
+    const V = new Layer(TP);
+    outlinedText(V, String(value), Math.round((x * P + 16) / TP), Math.round((y * P + 38) / TP), { scale: 2, fill: cy => (cy < 7 ? C.yellow : C.orange), outline: C.ink, shadow: C.plum });
+    T.push(V);
   });
 
-  L.sprite(ICON.leaf.rows, 10, 76, ICON.leaf.pal);
-  L.text('top languages', 21, 76, { color: C.yellow });
-  let y = 88;
+  let y = 236;
+  text('top languages', 40, y, C.yellow);
+  y += 34;
   if (!d.languages.length) {
-    L.sprite(ICON.chest.rows, 10, y + 2, ICON.chest.pal, 3);
-    ['No public repos yet.', 'Languages show up here', 'once one goes public.'].forEach((line, k) => L.text(line, 40, y + k * 10, { color: C.silver }));
-    y += 30;
+    text('No public repos yet. Languages show up here', 40, y, C.silver);
+    text('once one goes public.', 40, y + 26, C.silver);
+    y += 54;
   } else {
     for (const { name, pct } of d.languages) {
-      L.text(name, 10, y, { color: C.cream });
-      frame(L, 106, 7, C.ink, C.navy, C.navy, 66, y);
-      const filled = Math.round((pct / 100) * 104);
-      for (let i = 0; i < filled; i++) for (let r = 1; r < 6; r++) L.set(67 + i, y + r, r === 1 ? C.cream : r < 4 ? C.green : C.moss);
+      text(name, 40, y, C.cream);
+      const by = Math.round(y / P);
+      frame(L, 104, 6, C.ink, C.navy, C.navy, 64, by);
+      const filled = Math.round((pct / 100) * 102);
+      for (let i = 0; i < filled; i++) for (let r = 1; r < 5; r++) L.set(65 + i, by + r, r === 1 ? C.cream : r < 3 ? C.green : C.moss);
       const label = `${pct}%`;
-      L.text(label, 191 - textWidth(label), y, { color: C.cream });
-      y += 10;
+      text(label, W - 40 - textWidth(label) * TP, y, C.cream);
+      y += 30;
     }
   }
   const today = new Date().toISOString().slice(0, 10);
-  L.text(d.contributions == null ? 'Contributions: set by the workflow.' : 'Contributions cover the past year.', 10, y + 4, { color: C.silver });
-  L.text(`Updated ${today}`, 10, y + 14, { color: C.silver });
+  text(d.contributions == null ? 'Contributions are filled in by the daily workflow.' : 'Contributions cover the past year.', 40, y + 12, C.silver);
+  text(`Updated ${today}`, 40, y + 38, C.silver);
+  L.toString = (orig => () => orig() + T.join(''))(L.toString.bind(L));
 
   const summary = `${d.repos} public repos, ${d.followers} followers, ${d.stars} stars` +
     (d.contributions == null ? '' : `, ${d.contributions} contributions in the past year`) +

@@ -112,7 +112,7 @@ function header() {
   const title = new Layer(P);
   const titleCells = outlinedText(title, NAME, tx, ty, { scale: 2, fill: cy => (cy < 6 ? C.yellow : cy < 8 ? (cy % 2 ? C.orange : C.yellow) : C.orange), outline: C.ink, shadow: C.plum });
 
-  const PRESS = '▶ PRESS START';
+  const PRESS = 'PRESS START';
   const press = new Layer(P);
   outlinedText(press, PRESS, Math.floor((CW - textWidth(PRESS)) / 2), 31, { fill: C.cream, outline: C.ink });
 
@@ -153,46 +153,44 @@ function wrap(text, maxCells) {
 }
 
 function about() {
-  const P = 4, CW = 200;
+  const P = 4, TP = 3, CW = 200, W = CW * P;
   const TEXT = "Halo! I'm anrlldev. Right now I'm building a chat app that runs on Bluetooth, SQL lessons in Indonesian, and a site for a Japanese club.";
-  const TX = 46, TY = 21, LH = 10, maxCells = CW - TX - 8;
-  const LINES = wrap(TEXT, maxCells);
-  const CH = Math.max(56, TY + LINES.length * LH + 6);
-  const W = CW * P, H = CH * P;
+  const TX = 184, TY = 80, LH = 30;
+  const LINES = wrap(TEXT, Math.floor((W - TX - 32) / TP));
+  const CH = Math.max(52, Math.ceil((TY + LINES.length * LH + 20) / P));
+  const H = CH * P;
 
   const L = new Layer(P);
   panel(L, CW, CH, 0, 0, { flat: true });
   const portrait = new Layer(P);
   frame(portrait, 32, 36, C.cream, C.ink, C.navy, 7, 8);
-  for (let y = 10; y < 42; y++) for (let x = 9; x < 37; x++) if (y > 30) portrait.set(x, y, y === 31 ? C.green : C.moss);
+  for (let y = 31; y < 42; y++) for (let x = 9; x < 37; x++) portrait.set(x, y, y === 31 ? C.green : C.moss);
   portrait.set(12, 13, C.cream).set(31, 16, C.yellow).set(20, 11, C.cream).set(34, 24, C.cream);
-
-  const body = MASCOT_A.slice(3);
-  const face = new Layer(P).sprite(body, 13, 13, MASCOT_PAL, 2);
+  const face = new Layer(P).sprite(MASCOT_A.slice(3), 13, 13, MASCOT_PAL, 2);
   const leavesUp = new Layer(P).sprite(MASCOT_A.slice(0, 3), 13, 7, MASCOT_PAL, 2);
   const leavesDown = new Layer(P).sprite(['..........', 'gg......gg', 'gggg..gggg'], 13, 7, MASCOT_PAL, 2);
   const blinkL = new Layer(P);
-  for (const ex of [3, 6]) blinkL.rect(13 + ex * 2, 13 + 3 * 2, 2, 1, C.peach).rect(13 + ex * 2, 13 + 3 * 2 + 1, 2, 1, C.ink);
+  for (const ex of [3, 6]) blinkL.rect(13 + ex * 2, 19, 2, 1, C.peach).rect(13 + ex * 2, 20, 2, 1, C.ink);
 
-  const tag = new Layer(P);
-  frame(tag, textWidth('ANRLLDEV') + 8, 11, C.ink, C.plum, C.plum, TX - 2, 6);
-  outlinedText(tag, 'ANRLLDEV', TX + 2, 8, { fill: C.yellow, outline: C.ink });
+  const tag = new Layer(TP);
+  const nameW = textWidth('ANRLLDEV');
+  frame(tag, nameW + 8, 13, C.ink, C.plum, C.plum, TX / TP - 1, 9);
+  outlinedText(tag, 'ANRLLDEV', TX / TP + 3, 12, { fill: C.yellow, outline: C.ink });
 
   const T = 16, CPS = 0.055;
   let t = 0.6, css = '', defs = '', text = '', covers = '';
   LINES.forEach((line, i) => {
-    const x = TX * P, y = (TY + i * LH) * P, wCells = textWidth(line) + 1, wpx = wCells * P;
-    text += new Layer(P, x, y).text(line, 0, 0, { color: C.cream });
-    let kf = `0%{transform:translateX(0)}`;
+    const y = TY + i * LH, wpx = (textWidth(line) + 1) * TP;
+    text += new Layer(TP, TX, y).text(line, 0, 0, { color: C.cream });
+    let kf = '0%{transform:translateX(0)}';
     [...line].forEach((_, k) => {
-      const v = Math.min(textWidth(line.slice(0, k + 1)) + 1, wCells);
-      kf += `${pct(((t + (k + 1) * CPS) / T) * 100)}{transform:translateX(${v * P}px)}`;
+      kf += `${pct(((t + (k + 1) * CPS) / T) * 100)}{transform:translateX(${Math.min((textWidth(line.slice(0, k + 1)) + 1) * TP, wpx)}px)}`;
     });
     const s = (t / T) * 100, e = ((t + line.length * CPS) / T) * 100;
     kf += `100%{transform:translateX(${wpx}px)}`;
     t += line.length * CPS + 0.25;
-    defs += `<clipPath id="l${i}"><rect x="${x}" y="${y - 4}" width="${wpx + 24}" height="${LH * P}"/></clipPath>`;
-    covers += `<g clip-path="url(#l${i})"><g class="cover ty${i}"><rect x="${x}" y="${y - 4}" width="${wpx + 24}" height="${LH * P}" fill="${C.night}"/><rect class="cu${i}" x="${x + 2}" y="${y}" width="16" height="28" fill="${C.yellow}"/></g></g>`;
+    defs += `<clipPath id="l${i}"><rect x="${TX}" y="${y - 3}" width="${wpx + 18}" height="${LH}"/></clipPath>`;
+    covers += `<g clip-path="url(#l${i})"><g class="cover ty${i}"><rect x="${TX}" y="${y - 3}" width="${wpx + 18}" height="${LH}" fill="${C.night}"/><rect class="cu${i}" x="${TX + 2}" y="${y}" width="12" height="21" fill="${C.yellow}"/></g></g>`;
     css += `.ty${i}{animation:ty${i} ${T}s steps(1,end) infinite}@keyframes ty${i}{${kf}}
 .cu${i}{animation:cu${i} ${T}s steps(1,end) infinite}@keyframes cu${i}{0%{opacity:0}${pct(s)}{opacity:1}${pct(e)}{opacity:0}100%{opacity:0}}`;
   });
@@ -395,26 +393,86 @@ function map({ withWalker }) {
   writeSvg(out(withWalker ? 'assets/map.svg' : 'play/map.svg'), W, H, label, css, body);
 }
 
-// ---------- section ribbons ----------
-function ribbon(file, text, icon) {
-  const P = 4, tw = textWidth(text);
-  const BW = 8 + 8 + 4 + tw + 6;
+// ---------- section ribbons (text only) ----------
+function ribbon(file, text) {
+  const P = 3, tw = textWidth(text);
+  const BW = 7 + tw + 7;
   const L = new Layer(P);
   const tailC = '#5e1c40', shade = '#3b0f28';
   for (const side of [0, 1]) {
     for (let y = 3; y < 15; y++) for (let i = 0; i < 7; i++) {
       const notch = Math.max(0, 3 - Math.abs(y - 8.5)) | 0;
       if (i < notch) continue;
-      const x = side === 0 ? i : BW + 6 - i;
-      L.set(x, y, i > 4 ? shade : tailC);
+      L.set(side === 0 ? i : BW + 6 - i, y, i > 4 ? shade : tailC);
     }
   }
   for (let y = 0; y < 12; y++) for (let x = 3; x < BW + 4; x++) L.set(x, y, y === 0 ? C.pink : y === 11 ? shade : C.plum);
   outlineShape(L);
-  const ic = new Layer(P).sprite(ICON[icon].rows, 8, 2, ICON[icon].pal);
-  outlinedText(L, text, 20, 2, { fill: C.yellow, outline: C.ink });
-  const css = `.ic{animation:ic 1.6s steps(1) infinite}@keyframes ic{50%{transform:translateY(-4px)}}` + REDUCED('');
-  writeSvg(out(`assets/${file}`), (BW + 8) * P, 16 * P, text, css, at(4, 4, L + g('ic', ic)));
+  outlinedText(L, text, 10, 2, { fill: C.yellow, outline: C.ink });
+  writeSvg(out(`assets/${file}`), (BW + 8) * P, 16 * P, text, '', at(P, P, L.toString()));
+}
+
+// ---------- pixel buttons (wrapped in real links in the README) ----------
+function button(file, label, w) {
+  const P = 3, CW = Math.round(w / P), CH = 22;
+  const L = new Layer(P);
+  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
+    const ex = Math.min(x, CW - 1 - x), ey = Math.min(y, CH - 1 - y);
+    if (ex + ey < 2) continue;
+    L.set(x, y, ex === 0 || ey === 0 || ex + ey === 2 ? C.ink : y === 1 ? C.pink : y >= CH - 4 ? '#3b0f28' : C.plum);
+  }
+  outlinedText(L, label, Math.round((CW - textWidth(label)) / 2), 6, { fill: C.yellow, outline: C.ink });
+  const css = shineCss('shine', CW * P + 80, 4) + REDUCED('.shine{display:none}');
+  const body = `<defs><clipPath id="b"><rect x="${P}" y="${P}" width="${(CW - 2) * P}" height="${(CH - 5) * P}"/></clipPath></defs>` + L
+    + `<g clip-path="url(#b)"><g class="shine"><rect x="-40" y="0" width="18" height="${CH * P}" fill="${C.cream}" opacity=".25"/></g></g>`;
+  writeSvg(out(`assets/${file}`), CW * P, CH * P, label, css, body);
+}
+
+// ---------- quest cards: one per project, illustration alternates sides ----------
+const QUESTS = [
+  ['tendril', 'Tendril', 'Android chat that works over Bluetooth, no internet needed.', 'Kotlin, Jetpack Compose'],
+  ['dblab', 'DBLab', 'SQL lessons in Indonesian, with queries running right in the browser.', 'Next.js, sql.js'],
+  ['fileflow', 'FileFlow', 'Desktop app that automates file chores.', 'Tauri'],
+  ['akari', 'AKARI', 'Website for a Japanese culture club, with a meetings and attendance area.', 'Next.js, Supabase'],
+];
+function questCard([key, name, desc, tags], i) {
+  const P = 4, CW = 200, W = CW * P, SP = 6;
+  const left = i % 2 === 0;
+  const textW = W - (42 + 18) * P - 28;
+  const CH = Math.max(44, Math.ceil((84 + wrap(desc, Math.floor(textW / 3)).length * 26 + 6 + 21 + 24) / P)), H = CH * P;
+  const rnd = rng(30 + i);
+  const L = new Layer(P);
+  panel(L, CW, CH, 0, 0, { flat: true });
+  const bx = left ? 6 : CW - 48, bw = 42, bh = 32, by = Math.round((CH - bh) / 2);
+  const box = new Layer(P);
+  frame(box, bw, bh, C.cream, C.ink, C.dusk, bx, by);
+  for (let y = by + 24; y < by + bh - 2; y++) for (let x = bx + 2; x < bx + bw - 2; x++) box.set(x, y, y === by + 24 ? C.green : (rnd() < 0.12 ? C.green : C.moss));
+  const stars = new Layer(P);
+  for (let n = 0; n < 7; n++) stars.set(bx + 3 + Math.floor(rnd() * (bw - 6)), by + 3 + Math.floor(rnd() * 14), n % 3 ? C.cream : C.yellow);
+
+  const d = LANDMARKS[key];
+  const sw = d.rows[0].length * SP, sh = d.rows.length * SP;
+  const sx = bx * P + Math.round((bw * P - sw) / 2), sy = (by + 25) * P - sh;
+  const sprite = new Layer(SP, sx, sy).sprite(d.rows, 0, 0, d.pal);
+  let extra = '';
+  if (key === 'tendril') extra = g('tw0', new Layer(SP, sx, sy).set(1, 2, C.yellow).set(14, 5, C.cream)) + g('tw1', new Layer(SP, sx, sy).set(13, 1, C.yellow).set(2, 12, C.cream));
+  if (key === 'dblab') extra = g('blink', new Layer(SP, sx, sy).set(6, -1, C.red));
+  if (key === 'akari') extra = g('lamp', new Layer(SP, sx, sy).rect(7, 6, 2, 2, C.yellow));
+  if (key === 'fileflow') for (let k = 0; k < 3; k++) extra += g(`puff p${k}`, new Layer(SP, sx, sy).rect(11, -1, 2, 1, C.silver));
+
+  const tx = left ? (bx + bw + 6) * P : 28, maxW = W - (bw + 18) * P - 28;
+  const T = new Layer(3);
+  outlinedText(T, name, Math.round(tx / 3), 9, { scale: 2, fill: cy => (cy < 7 ? C.yellow : C.orange), outline: C.ink, shadow: C.plum });
+  const lines = wrap(desc, Math.floor(maxW / 3));
+  let y = 84;
+  const descL = lines.map((line, k) => new Layer(3, tx, y + k * 26).text(line, 0, 0, { color: C.cream })).join('');
+  y += lines.length * 26 + 6;
+  const tagL = new Layer(3, tx, y).text(tags, 0, 0, { color: C.lavender });
+
+  const css = BASE_CSS + `.lamp{animation:lamp 1.4s steps(1) infinite}@keyframes lamp{50%{opacity:.3}}
+.puff{animation:puff 3s infinite;opacity:0}.p1{animation-delay:-1s}.p2{animation-delay:-2s}
+@keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}100%{opacity:0;transform:translate(10px,-30px)}}` + REDUCED('.puff{display:none}');
+  writeSvg(out(`assets/quest-${key}.svg`), W, H, `${name}: ${desc} ${tags}.`, css, L + box + g('tw0', stars) + sprite + extra + T + descL + tagL);
 }
 
 // ---------- footer: the mascot sleeps by a campfire ----------
@@ -470,11 +528,9 @@ function snakePlaceholder() {
   const P = 4, CW = 200, CH = 40;
   const L = new Layer(P);
   panel(L, CW, CH);
-  const EGG = ['..ccc...', '.ccccc..', 'cccgccc.', 'ccgggcc.', 'cccgccc.', 'ccccccc.', '.ccccc..', '..ccc...'];
-  L.sprite(EGG, 14, 12, { c: C.cream, g: C.green }, 2);
-  L.text('The snake hatches after', 38, 11, { color: C.cream });
-  L.text('the first workflow run.', 38, 22, { color: C.cream });
-  writeSvg(file, CW * P, CH * P, 'The contribution snake appears after the first workflow run.', '', L.toString());
+  const msg = 'The snake shows up after the first workflow run.';
+  const T = new Layer(3, Math.round((CW * P - textWidth(msg) * 3) / 2), 70).text(msg, 0, 0, { color: C.cream });
+  writeSvg(file, CW * P, CH * P, msg, '', L.toString() + T);
 }
 
 function gameSprites() {
@@ -486,9 +542,15 @@ header();
 about();
 map({ withWalker: true });
 map({ withWalker: false });
-ribbon('title-map.svg', 'WORLD MAP', 'pin');
-ribbon('title-stats.svg', 'STATS', 'heart');
-ribbon('title-snake.svg', 'BATTLE LOG', 'sword');
+ribbon('title-map.svg', 'WORLD MAP');
+ribbon('title-quests.svg', 'QUEST LOG');
+ribbon('title-stats.svg', 'STATS');
+ribbon('title-snake.svg', 'BATTLE LOG');
+ribbon('title-contact.svg', 'FIND ME');
+QUESTS.forEach(questCard);
+button('btn-play.svg', 'WALK AROUND THE MAP', 480);
+button('btn-instagram.svg', 'INSTAGRAM @ir.prat_', 390);
+button('btn-linkedin.svg', 'LINKEDIN', 390);
 footer();
 snakePlaceholder();
 gameSprites();

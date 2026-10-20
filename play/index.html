@@ -43,6 +43,9 @@
   .pad button { font: inherit; font-size: 22px; background: var(--haze); color: var(--cream);
     border: 3px solid var(--cream); cursor: pointer; touch-action: none; user-select: none; }
   .pad button:active { background: var(--moss); }
+  .pad button::after { content: ''; display: block; width: 16px; height: 16px; margin: auto; background: var(--cream);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .pad .right::after { transform: rotate(90deg); } .pad .down::after { transform: rotate(180deg); } .pad .left::after { transform: rotate(270deg); }
   .pad .up { grid-column: 2; } .pad .left { grid-column: 1; grid-row: 2; }
   .pad .down { grid-column: 2; grid-row: 2; } .pad .right { grid-column: 3; grid-row: 2; }
 
@@ -70,10 +73,10 @@
   </section>
 
   <div class="pad" aria-label="Movement buttons">
-    <button class="up" data-dir="up" aria-label="Walk up">▲</button>
-    <button class="left" data-dir="left" aria-label="Walk left">◀</button>
-    <button class="down" data-dir="down" aria-label="Walk down">▼</button>
-    <button class="right" data-dir="right" aria-label="Walk right">▶</button>
+    <button class="up" data-dir="up" aria-label="Walk up"></button>
+    <button class="left" data-dir="left" aria-label="Walk left"></button>
+    <button class="down" data-dir="down" aria-label="Walk down"></button>
+    <button class="right" data-dir="right" aria-label="Walk right"></button>
   </div>
 
   <h3>All places</h3>
