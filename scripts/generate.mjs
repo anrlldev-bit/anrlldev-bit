@@ -574,8 +574,11 @@ function questCard([key, name, desc, tags], i) {
     for (let k = -2; k <= 2; k++) for (let j = -2; j <= 2; j++) if (k * k + j * j <= 5) deco.set(bx + bw - 8 + k, by + 6 + j, C.yellow);
     for (const [cx, cy] of [[bx + 8, by + 7], [bx + 22, by + 12]]) deco.rect(cx, cy, 6, 2, C.cream).rect(cx + 1, cy - 1, 3, 1, C.cream);
   } else if (key === 'dblab') {
-    const STAR = ['...y...', '..yyy..', 'yyyCyyy', '.yyyyy.', '..yyy..', '.yy.yy.', '.y...y.'];
-    STAR.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') deco.set(bx + bw - 11 + i, by + 4 + j, ch === 'C' ? C.cream : C.yellow); }));
+    // Small plus-shaped sparkles like the ones in the header sky, still.
+    const plus = (cx, cy, c, c2) => { deco.set(cx, cy, c).set(cx - 1, cy, c2).set(cx + 1, cy, c2).set(cx, cy - 1, c2).set(cx, cy + 1, c2); };
+    plus(bx + bw - 9, by + 7, C.blue, '#1d6fbf');
+    plus(bx + 8, by + 10, C.lavender, '#5f574f');
+    plus(bx + bw - 20, by + 14, C.lavender, '#5f574f');
     for (let n = 0; n < 9; n++) (n % 2 ? deco : decoB).set(bx + 3 + Math.floor(rnd() * (bw - 6)), by + 3 + Math.floor(rnd() * 16), C.lavender);
   } else if (key === 'fileflow') {
     for (let k = -5; k <= 5; k++) for (let j = -5; j <= 0; j++) if (k * k + j * j <= 25) deco.set(bx + bw / 2 + k, horizon - 1 + j, C.yellow);
