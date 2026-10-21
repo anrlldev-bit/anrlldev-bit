@@ -574,8 +574,9 @@ function questCard([key, name, desc, tags], i) {
     for (let k = -2; k <= 2; k++) for (let j = -2; j <= 2; j++) if (k * k + j * j <= 5) deco.set(bx + bw - 8 + k, by + 6 + j, C.yellow);
     for (const [cx, cy] of [[bx + 8, by + 7], [bx + 22, by + 12]]) deco.rect(cx, cy, 6, 2, C.cream).rect(cx + 1, cy - 1, 3, 1, C.cream);
   } else if (key === 'dblab') {
-    for (let n = 0; n < 9; n++) (n % 2 ? deco : decoB).set(bx + 3 + Math.floor(rnd() * (bw - 6)), by + 3 + Math.floor(rnd() * 16), n % 3 ? C.cream : C.yellow);
-    deco.rect(bx + bw - 9, by + 4, 3, 3, C.cream).set(bx + bw - 8, by + 4, C.dusk);
+    const STAR = ['...y...', '..yyy..', 'yyyCyyy', '.yyyyy.', '..yyy..', '.yy.yy.', '.y...y.'];
+    STAR.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') deco.set(bx + bw - 11 + i, by + 4 + j, ch === 'C' ? C.cream : C.yellow); }));
+    for (let n = 0; n < 9; n++) (n % 2 ? deco : decoB).set(bx + 3 + Math.floor(rnd() * (bw - 6)), by + 3 + Math.floor(rnd() * 16), C.lavender);
   } else if (key === 'fileflow') {
     for (let k = -5; k <= 5; k++) for (let j = -5; j <= 0; j++) if (k * k + j * j <= 25) deco.set(bx + bw / 2 + k, horizon - 1 + j, C.yellow);
     for (let x = bx + 4; x < bx + bw - 4; x += 7) decoB.rect(x, by + 6 + (x % 3), 4, 1, C.pink);
@@ -597,7 +598,10 @@ function questCard([key, name, desc, tags], i) {
   const LS = Math.min(4, Math.floor(room / lmInfo.h));
   const lx = bx * P + Math.round((bw * P - lmInfo.w * LS) / 2), ly = (horizon + 2) * P - lmInfo.h * LS;
   const inner = `<clipPath id="tile"><rect x="${(bx + 2) * P}" y="${(by + 2) * P}" width="${(bw - 4) * P}" height="${(bh - 4) * P}"/></clipPath>`;
-  const sprite = `<g clip-path="url(#tile)">${drawLandmark(key, LS, lx, ly).svg}</g>`, extra = '';
+  // Cards stay still: strip the blink and twinkle classes the landmark carries on the map.
+  const lmSvgCard = drawLandmark(key, LS, lx, ly).svg;
+  const still = key === 'dblab' ? lmSvgCard.replace(/ class="(tw0|tw1|blink)"/g, '') : lmSvgCard;
+  const sprite = `<g clip-path="url(#tile)">${still}</g>`, extra = '';
 
   let y = Math.round((H - blockH) / 2);
   const T = new Layer(TP);
@@ -611,7 +615,7 @@ function questCard([key, name, desc, tags], i) {
 .puff{animation:puff 3s infinite;opacity:0}.p1{animation-delay:-1s}.p2{animation-delay:-2s}
 @keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}100%{opacity:0;transform:translate(10px,-30px)}}
 .drift{animation:drift 14s linear infinite}@keyframes drift{0%{transform:translateX(-16px)}50%{transform:translateX(16px)}100%{transform:translateX(-16px)}}` + REDUCED('.puff{display:none}');
-  const decoSvg = key === 'tendril' || key === 'fileflow' || key === 'kompas' ? g('drift', decoB) + deco : g('tw0', deco) + g('tw1', decoB);
+  const decoSvg = key === 'tendril' || key === 'fileflow' || key === 'kompas' ? g('drift', decoB) + deco : key === 'dblab' ? deco + decoB : g('tw0', deco) + g('tw1', decoB);
   writeSvg(out(`assets/quest-${key}.svg`), W, H, `${name}: ${desc} ${tags}.`, css, `<defs>${inner}</defs>` + L + box + `<g clip-path="url(#tile)">${decoSvg}</g>` + sprite + extra + T + descL + tagL);
 }
 
