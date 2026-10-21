@@ -177,16 +177,22 @@ function about() {
   frame(tag, nameW + 8, 13, C.ink, C.plum, C.plum, TX / TP - 1, 16);
   outlinedText(tag, 'ANRLLDEV', TX / TP + 3, 19, { fill: C.yellow, outline: C.ink });
 
-  // Each line fades in after the one above it. No cursor, no typing cover.
-  let css = BASE_CSS, text = '';
+  // Typing: each line is revealed by a clip that steps across it, one step per character.
+  let css = BASE_CSS, defs = '', text = '';
+  const T = 16, CPS = 0.055;
+  let t = 0.6;
   LINES.forEach((line, i) => {
-    const y = TY + i * LH, s0 = 3 + i * 9, e0 = s0 + 4;
-    text += `<g class="ln ln${i}">${new Layer(TP, TX, y).text(line, 0, 0, { color: C.cream })}</g>`;
-    css += `.ln${i}{animation:ln${i} 12s ease-out infinite}@keyframes ln${i}{0%,${s0}%{opacity:0}${e0}%,94%{opacity:1}100%{opacity:0}}`;
+    const y = TY + i * LH, n = line.length, wpx = (textWidth(line) + 1) * TP;
+    const s0 = (t / T) * 100, e0 = ((t + n * CPS) / T) * 100;
+    defs += `<clipPath id="l${i}"><rect class="rv rv${i}" x="${TX}" y="${y - 4}" width="${wpx + 4}" height="${LH}"/></clipPath>`;
+    text += `<g clip-path="url(#l${i})">${new Layer(TP, TX, y).text(line, 0, 0, { color: C.cream })}</g>`;
+    css += `.rv${i}{transform-box:fill-box;transform-origin:0 0;animation:rv${i} ${T}s steps(${n},end) infinite}`;
+    css += `@keyframes rv${i}{0%{transform:scaleX(0)}${pct(s0)}{transform:scaleX(0)}${pct(e0)}{transform:scaleX(1)}100%{transform:scaleX(1)}}`;
+    t += n * CPS + 0.25;
   });
-  css += `.bl{animation:bl 4.2s steps(1) infinite}@keyframes bl{0%{opacity:0}93%{opacity:1}97%{opacity:0}}` + REDUCED('.ln{opacity:1!important}.bl{display:none}');
+  css += `.bl{animation:bl 4.2s steps(1) infinite}@keyframes bl{0%{opacity:0}93%{opacity:1}97%{opacity:0}}` + REDUCED('.bl{display:none}.rv{transform:none!important}');
 
-  const svgBody = L + portrait + pals + g('bl', blinkL) + tag + text;
+  const svgBody = `<defs>${defs}</defs>` + L + portrait + pals + g('bl', blinkL) + tag + text;
   writeSvg(out('assets/about.svg'), W, H, TEXT, css, svgBody);
 }
 
