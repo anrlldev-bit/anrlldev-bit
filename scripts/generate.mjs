@@ -177,29 +177,19 @@ function about() {
   frame(tag, nameW + 8, 13, C.ink, C.plum, C.plum, TX / TP - 1, 16);
   outlinedText(tag, 'ANRLLDEV', TX / TP + 3, 19, { fill: C.yellow, outline: C.ink });
 
-  const T = 16, CPS = 0.055;
-  let t = 0.6, css = '', defs = '', text = '', covers = '';
+  // Each line fades in after the one above it. No cursor, no typing cover.
+  let css = BASE_CSS, text = '';
   LINES.forEach((line, i) => {
-    const y = TY + i * LH, wpx = (textWidth(line) + 1) * TP;
-    text += new Layer(TP, TX, y).text(line, 0, 0, { color: C.cream });
-    let kf = '0%{transform:translateX(0)}';
-    [...line].forEach((_, k) => {
-      kf += `${pct(((t + (k + 1) * CPS) / T) * 100)}{transform:translateX(${Math.min((textWidth(line.slice(0, k + 1)) + 1) * TP, wpx)}px)}`;
-    });
-    const s = (t / T) * 100, e = ((t + line.length * CPS) / T) * 100;
-    kf += `100%{transform:translateX(${wpx}px)}`;
-    t += line.length * CPS + 0.25;
-    defs += `<clipPath id="l${i}"><rect x="${TX}" y="${y - 3}" width="${wpx + 18}" height="${LH}"/></clipPath>`;
-    covers += `<g clip-path="url(#l${i})"><g class="cover ty${i}"><rect x="${TX}" y="${y - 3}" width="${wpx + 18}" height="${LH}" fill="${C.night}"/><rect class="cu${i}" x="${TX + 2}" y="${y}" width="8" height="14" fill="${C.yellow}"/></g></g>`;
-    css += `.ty${i}{animation:ty${i} ${T}s steps(1,end) infinite}@keyframes ty${i}{${kf}}
-.cu${i}{animation:cu${i} ${T}s steps(1,end) infinite}@keyframes cu${i}{0%{opacity:0}${pct(s)}{opacity:1}${pct(e)}{opacity:0}100%{opacity:0}}`;
+    const y = TY + i * LH, s0 = 3 + i * 9, e0 = s0 + 4;
+    text += `<g class="ln ln${i}">${new Layer(TP, TX, y).text(line, 0, 0, { color: C.cream })}</g>`;
+    css += `.ln${i}{animation:ln${i} 12s ease-out infinite}@keyframes ln${i}{0%,${s0}%{opacity:0}${e0}%,94%{opacity:1}100%{opacity:0}}`;
   });
-  css += `.lu{animation:fa 1.6s steps(1) infinite}.ld{animation:fa 1.6s steps(1) -.8s infinite}
-.bl{animation:bl 4.2s steps(1) infinite}@keyframes bl{0%{opacity:0}93%{opacity:1}97%{opacity:0}}` + REDUCED('.cover,.ld,.bl{display:none}');
+  css += `.bl{animation:bl 4.2s steps(1) infinite}@keyframes bl{0%{opacity:0}93%{opacity:1}97%{opacity:0}}` + REDUCED('.ln{opacity:1!important}.bl{display:none}');
 
-  const svgBody = `<defs>${defs}</defs>` + L + portrait + pals + g('bl', blinkL) + tag + text + covers;
+  const svgBody = L + portrait + pals + g('bl', blinkL) + tag + text;
   writeSvg(out('assets/about.svg'), W, H, TEXT, css, svgBody);
 }
+
 
 // ---------- world map: island overworld, one landmark per project ----------
 // Lake in the middle, a ring road around it, the six places along the outside of the ring.

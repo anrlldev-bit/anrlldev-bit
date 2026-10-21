@@ -1,13 +1,14 @@
 // Fetches public GitHub numbers and draws assets/generated/stats.svg.
 // Run: node scripts/stats.mjs [user]
-// GITHUB_TOKEN is optional; without it the contribution count is left empty.
+// PROFILE_TOKEN (or GITHUB_TOKEN) is optional; without one the contribution count is public-only.
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { C, Layer, textWidth, writeSvg, frame, panel, outlinedText } from './pixel.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const USER = process.argv[2] || process.env.GITHUB_REPOSITORY_OWNER || 'anrlldev-bit';
-const TOKEN = process.env.GITHUB_TOKEN;
+// PROFILE_TOKEN is a personal token with read:user, so private contributions are counted too.
+const TOKEN = process.env.PROFILE_TOKEN || process.env.GITHUB_TOKEN;
 const headers = {
   'User-Agent': `${USER}-profile-stats`,
   Accept: 'application/vnd.github+json',

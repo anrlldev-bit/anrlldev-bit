@@ -27,6 +27,7 @@ jobs:
         run: node scripts/stats.mjs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROFILE_TOKEN: ${{ secrets.PROFILE_TOKEN }}
 
       - name: Commit
         run: |
