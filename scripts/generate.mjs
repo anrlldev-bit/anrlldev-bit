@@ -186,7 +186,7 @@ function about() {
     const s0 = (t / T) * 100, e0 = ((t + n * CPS) / T) * 100;
     defs += `<clipPath id="l${i}"><rect class="rv rv${i}" x="${TX}" y="${y - 4}" width="${wpx + 4}" height="${LH}"/></clipPath>`;
     text += `<g clip-path="url(#l${i})">${new Layer(TP, TX, y).text(line, 0, 0, { color: C.cream })}</g>`;
-    css += `.rv${i}{transform-box:fill-box;transform-origin:0 0;animation:rv${i} ${T}s steps(${n},end) infinite}`;
+    css += `.rv${i}{transform-box:fill-box;transform-origin:0 0;animation:rv${i} ${T}s steps(${n},end) 1 both}`;
     css += `@keyframes rv${i}{0%{transform:scaleX(0)}${pct(s0)}{transform:scaleX(0)}${pct(e0)}{transform:scaleX(1)}100%{transform:scaleX(1)}}`;
     t += n * CPS + 0.25;
   });
