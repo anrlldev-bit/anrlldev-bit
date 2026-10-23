@@ -466,7 +466,7 @@ function map({ withWalker }) {
       kf += `${pct((f.t / t) * 100)}{transform:translate(${(f.xy[0] - sx) * P}px,${(f.xy[1] - sy) * P}px)${tf}}`;
     });
     css += `.route{animation:route ${t.toFixed(2)}s infinite}@keyframes route{${kf}}`;
-    const walkers = at((sx - 4) * P, (sy - 10) * P, g('route', withCat(2, -34, -56)));
+    const walkers = at((sx - 4) * P, (sy - 10) * P, g('route', withCat(2, 37, -27)));
     const body = ground + mtn + drawAll(behind) + walkers + drawAll(front) + g('lampglow', glowLayer) + clouds;
     writeSvg(out('assets/map.svg'), W, H, MAP_LABEL, css + REDUCED('.puff{display:none}'), body);
   } else {
