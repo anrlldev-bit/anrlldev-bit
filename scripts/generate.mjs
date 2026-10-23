@@ -657,7 +657,7 @@ function footer() {
   const fire = g('fa', new Layer(P).sprite(FIRE[0], 100, GROUND - 8, firePal)) + g('fb', new Layer(P).sprite(FIRE[1], 100, GROUND - 8, firePal));
 
   let zs = '', flies = '';
-  [[30, 22], [58, 26], [140, 24], [168, 20], [120, 27]].forEach(([x, y], k) => {
+  [[30, 22], [58, 26], [140, 24], [168, 20], [132, 18]].forEach(([x, y], k) => {
     flies += g(`fly fl${k}`, new Layer(P).set(x, y, C.yellow), ` style="animation-delay:-${k * 0.9}s"`);
   });
   const css = BASE_CSS + `.z{animation:z 3s infinite;opacity:0}.z1{animation-delay:-1s}.z2{animation-delay:-2s}
