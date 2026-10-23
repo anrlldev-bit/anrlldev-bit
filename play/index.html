@@ -39,7 +39,8 @@
   kbd { font: inherit; padding: 0 5px; border: 2px solid var(--lavender); border-bottom-width: 4px; background: var(--dusk); }
 
   .stage { position: relative; aspect-ratio: 800 / 400; padding: 6px; }
-  .world { position: absolute; inset: 6px; overflow: hidden; }
+  /* isolation keeps the objects' depth z-indexes inside the map, so dialogs always sit above them */
+  .world { position: absolute; inset: 6px; overflow: hidden; isolation: isolate; }
   .world > img { position: absolute; image-rendering: pixelated; pointer-events: none; }
   .world .map { inset: 0; width: 100%; height: 100%; }
   .world .hero { width: 4%; }
@@ -67,7 +68,7 @@
   .btn:hover { filter: brightness(1.15); }
   .actions[hidden] { display: none; }
   .chip.btnlike { cursor: pointer; font: inherit; font-size: 13px; }
-  .picker { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(13, 17, 23, .86); z-index: 10; padding: 16px; }
+  .picker { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(13, 17, 23, .86); z-index: 1000; padding: 16px; }
   .picker[hidden] { display: none; }
   .picker .win { padding: 22px 26px; text-align: center; max-width: 420px; width: 100%; }
   .picker h2 { margin: 0 0 6px; }
