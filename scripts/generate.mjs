@@ -575,10 +575,10 @@ function questCard([key, name, desc, tags], i) {
     for (const [cx, cy] of [[bx + 8, by + 7], [bx + 22, by + 12]]) deco.rect(cx, cy, 6, 2, C.cream).rect(cx + 1, cy - 1, 3, 1, C.cream);
   } else if (key === 'dblab') {
     // Small plus-shaped sparkles like the ones in the header sky, still.
-    const plus = (L, cx, cy, c, c2) => { L.set(cx, cy, c).set(cx - 1, cy, c2).set(cx + 1, cy, c2).set(cx, cy - 1, c2).set(cx, cy + 1, c2); };
-    plus(deco, bx + bw - 9, by + 7, C.blue, '#1d6fbf');
-    plus(decoB, bx + 8, by + 10, C.lavender, '#5f574f');
-    plus(deco, bx + bw - 20, by + 14, C.lavender, '#5f574f');
+    const plus = (cx, cy, c, c2) => { deco.set(cx, cy, c).set(cx - 1, cy, c2).set(cx + 1, cy, c2).set(cx, cy - 1, c2).set(cx, cy + 1, c2); };
+    plus(bx + bw - 9, by + 7, C.blue, '#1d6fbf');
+    plus(bx + 8, by + 10, C.lavender, '#5f574f');
+    plus(bx + bw - 20, by + 14, C.lavender, '#5f574f');
     for (let n = 0; n < 9; n++) (n % 2 ? deco : decoB).set(bx + 3 + Math.floor(rnd() * (bw - 6)), by + 3 + Math.floor(rnd() * 16), C.lavender);
   } else if (key === 'fileflow') {
     for (let k = -5; k <= 5; k++) for (let j = -5; j <= 0; j++) if (k * k + j * j <= 25) deco.set(bx + bw / 2 + k, horizon - 1 + j, C.yellow);
@@ -618,7 +618,7 @@ function questCard([key, name, desc, tags], i) {
 .puff{animation:puff 3s infinite;opacity:0}.p1{animation-delay:-1s}.p2{animation-delay:-2s}
 @keyframes puff{0%{opacity:0;transform:translate(0,0);animation-timing-function:steps(6,end)}15%{opacity:1}100%{opacity:0;transform:translate(10px,-30px)}}
 .drift{animation:drift 14s linear infinite}@keyframes drift{0%{transform:translateX(-16px)}50%{transform:translateX(16px)}100%{transform:translateX(-16px)}}` + REDUCED('.puff{display:none}');
-  const decoSvg = key === 'tendril' || key === 'fileflow' || key === 'kompas' ? g('drift', decoB) + deco : g('tw0', deco) + g('tw1', decoB);
+  const decoSvg = key === 'tendril' || key === 'fileflow' || key === 'kompas' ? g('drift', decoB) + deco : key === 'dblab' ? deco + decoB : g('tw0', deco) + g('tw1', decoB);
   writeSvg(out(`assets/quest-${key}.svg`), W, H, `${name}: ${desc} ${tags}.`, css, `<defs>${inner}</defs>` + L + box + `<g clip-path="url(#tile)">${decoSvg}</g>` + sprite + extra + T + descL + tagL);
 }
 
@@ -644,7 +644,7 @@ function footer() {
   const THANKS = 'THANKS FOR VISITING';
   const title = new Layer(3);
   outlinedText(title, THANKS, Math.round((W / 3 - textWidth(THANKS)) / 2), 12, { fill: cy => (cy < 4 ? C.cream : C.silver), outline: C.ink, shadow: C.plum });
-  const mascot = charLayer('boy', 'A', 3, 300, GROUND * P - 60, { asleep: true }).toString() + charLayer('girl', 'A', 3, 344, GROUND * P - 60, { asleep: true }) + catLayer('A', 3, 444, GROUND * P - 27, { asleep: true });
+  const mascot = charLayer('boy', 'A', 3, 300, GROUND * P - 60).toString() + charLayer('girl', 'A', 3, 344, GROUND * P - 60) + catLayer('A', 3, 444, GROUND * P - 27);
   const log = new Layer(P).rect(73, GROUND - 4, 25, 4, C.brown).rect(73, GROUND - 4, 25, 1, '#c97b4a').rect(73, GROUND - 1, 25, 1, C.dirt).set(73, GROUND - 3, C.dirt).set(97, GROUND - 3, C.dirt);
 
   const FIRE = [
@@ -657,7 +657,6 @@ function footer() {
   const fire = g('fa', new Layer(P).sprite(FIRE[0], 100, GROUND - 8, firePal)) + g('fb', new Layer(P).sprite(FIRE[1], 100, GROUND - 8, firePal));
 
   let zs = '', flies = '';
-  for (let k = 0; k < 3; k++) zs += g(`z z${k}`, new Layer(2, 398, (GROUND - 15) * P).text('z', 0, 0, { color: C.cream }));
   [[30, 22], [58, 26], [140, 24], [168, 20], [120, 27]].forEach(([x, y], k) => {
     flies += g(`fly fl${k}`, new Layer(P).set(x, y, C.yellow), ` style="animation-delay:-${k * 0.9}s"`);
   });
